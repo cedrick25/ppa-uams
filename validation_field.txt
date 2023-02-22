@@ -1,0 +1,26 @@
+var allowedDocket= [ 'JPI', 'PI', 'JRPI', 'RPI', 'JTPI', 'TPI' ];
+            var requiredField= [ 'add_petitioner', 'add_date_rcv', 'add_investigating_officer'];
+
+            if(___validateSave(allowedDocket,$("#add_docket_no"),requiredField)){
+
+
+
+
+
+var allowedDocket= [ 'JPI', 'PI', 'JRPI', 'RPI', 'JTPI', 'TPI' ];
+            var requiredField= [ 'add_acted_petitioner'];
+            var check = true
+            var checkTable = ['F5T1', 'F5T2_RCV']
+
+            ___validateSave(allowedDocket,$("#add_docket_no"),requiredField,check,checkTable).done(function(result){
+                if(result){
+
+
+ var allowedDocket= [ 'JCPI', 'CPI', 'FBCI'];
+            var requiredField= [ 'add_cmpltd_docket_no','add_cmpltd_petitioner','add_cmpltd_date'];          
+            
+
+             if(___validateSave(allowedDocket,$("#add_docket_no"),requiredField)){      	
+
+
+ var allowedDocket= [ 'JPS', 'PS', 'JRPS', 'RPS', 'JTPS', 'TPS' ]             	
