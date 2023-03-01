@@ -624,6 +624,81 @@ $.wms.dashboard = (function() {
                                 alert("Failed to Update user.")
                             }
                         });
+
+                        var payload1 = {
+                                // "USER_ID" : $("#txtUserID").val(),
+                                "USER_FNAME" : $("#txtFname").val(),
+                                "USER_MNAME" : $("#txtMname").val(),
+                                "USER_LNAME" : $("#txtLname").val(),
+                                "USER_NAME": $("#txtUsername").val(),
+                                "USER_PASS" : $("#txtUpdatePassword1").val(),            
+                                "USER_EMAIL": $("#txtEmail").val(),
+                                "USER_CONTACT": $("#txtContact").val(),
+                                "USER_EXPIRY" : "",
+                                "USER_LEVEL_ID" : $("#ddUserType").val(),         
+                                "USER_POSITION_ID" : $("#ddSelPosition").val(),         
+                                "FIELD_OFFICE_ID" : $("#ddSelOffice").val(),         
+                                "FIELD_OFFICE" : $("#ddSelOffice :selected").text(),         
+                                "CREATED_BY" : "sysadmin",
+                                "USER_STATUS" : $("#ddUserStatus").val(),
+                        }
+                        $.wms.executeExternalPost('/ppa-bug-api/wsv1/api/UpdateUserByEmail',JSON.stringify(payload1)).done(function (result) {
+                            console.log(result);
+                            if(result.status === 'SUCCESS'){
+                                console.log("success to update user bug reporting.")
+                            }else{
+                                alert("Failed to update user bug reporting.")
+                            }
+                        });
+
+                        var payload2 = {
+                                // "USER_ID" : $("#txtUserID").val(),
+                                "USER_FULLNAME" : $("#txtFname").val() +" "+$("#txtMname").val() +" "+$("#txtLname").val(),
+                                "USER_FNAME" : $("#txtFname").val(),
+                                "USER_MNAME" : $("#txtMname").val(),
+                                "USER_LNAME" : $("#txtLname").val(),
+                                "USER_NAME": $("#txtUsername").val(),
+                                "USER_PASS" : $("#txtUpdatePassword1").val(),       
+                                "USER_EMAIL": $("#txtEmail").val(),
+                                "USER_CONTACT": $("#txtContact").val(),
+                                "USER_EXPIRY" : "",
+                                "USER_LEVEL_ID" : $("#ddUserType").val(),         
+                                // "USER_POSITION_ID" : $("#ddSelPosition").val(),         
+                                // "FIELD_OFFICE_ID" : $("#ddSelOffice").val(),         
+                                "FIELD_OFFICE" : $("#ddSelOffice :selected").text(),         
+                                "CREATED_BY" : "sysadmin",
+                                "USER_STATUS" : $("#ddUserStatus").val(),
+                        }
+                        $.wms.executeExternalPost('/ppa-cmis-api_origin/wsv1/api/UpdateUserByEmail',JSON.stringify(payload2)).done(function (result) {
+                            console.log(result);
+                            if(result.status === 'SUCCESS'){
+                                console.log("success to update user expansion.")
+                            }else{
+                                alert("Failed to update user expansion.")
+                            }
+                        });
+                        
+                        var payload3 = {
+                                "first_name"            : $("#txtFname").val(),
+                                "middle_name"           : $("#txtMname").val(),
+                                "last_name"             : $("#txtLname").val(),
+                                "suffix"                : "",
+                                "password"              : $("#txtUpdatePassword1").val(),            
+                                "email_address"         : $("#txtEmail").val(),
+                                "position_id"           : $("#ddSelPosition").val(),
+                                "contact_number"        : $("#txtContact").val(),
+                                "user_type_id"          : $("#ddUserType").val(),                 
+                                "field_office_id"       : $("#ddSelOffice").val(),     
+                        }
+                        
+                        $.wms.executeExternalPost('/transcription_api/User_accounts/update_email',JSON.stringify(payload3)).done(function (result) {
+                            console.log(result);
+                            if(result.status === 'Success'){
+                                console.log("success to add user transcription.")
+                            }else{
+                                alert("Failed to add user transcription.")
+                            }
+                        });
                     });
 
                 });
@@ -777,6 +852,81 @@ $.wms.dashboard = (function() {
                         
                     }else{
                         alert("Failed to add user.")
+                    }
+                });
+
+                var payload1 = {
+                        "USER_FNAME" : $("#addtxtFname").val(),
+                        "USER_MNAME" : $("#addtxtMname").val(),
+                        "USER_LNAME" : $("#addtxtLname").val(),
+                        "USER_NAME": $("#addtxtUsername").val(),
+                        "USER_PASS" : $("#addtxtPassword1").val(),            
+                        "USER_EMAIL": $("#addtxtEmail").val(),
+                        "USER_POSITION_ID": $("#addddSelPosition").val(),
+                        "USER_CONTACT": $("#addtxtContact").val(),
+                        "USER_EXPIRY" : "",
+                        "USER_LEVEL_ID" : $("#addddUserType").val(),         
+                        "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
+                        "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
+                        "CREATED_BY" : "sysadmin",
+                        "STATUS" : $("#addddUserStatus").val(),
+                }
+                $.wms.executeExternalPost('/ppa-bug-api/wsv1/api/AddUser',JSON.stringify(payload1)).done(function (result) {
+                    console.log(result);
+                    if(result.status === 'SUCCESS'){
+                        console.log("success to add user bug reporting.")
+                    }else{
+                        alert("Failed to add user bug reporting.")
+                    }
+                });
+
+                var payload2 = {
+                        "USER_FULLNAME" : $("#addtxtFname").val() +" "+$("#addtxtMname").val() +" "+$("#addtxtLname").val(),
+                        "USER_FNAME" : $("#addtxtFname").val(),
+                        "USER_MNAME" : $("#addtxtMname").val(),
+                        "USER_LNAME" : $("#addtxtLname").val(),
+                        "USER_NAME": $("#addtxtUsername").val(),
+                        "USER_PASS" : $("#addtxtPassword1").val(),            
+                        "USER_EMAIL": $("#addtxtEmail").val(),
+                        // "USER_POSITION_ID": $("#addddSelPosition").val(),
+                        "USER_CONTACT": $("#addtxtContact").val(),
+                        "USER_EXPIRY" : "",
+                        "USER_LEVEL_ID" : $("#addddUserType").val(),         
+                        "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
+                        // "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
+                        "CREATED_BY" : "sysadmin",
+                        "STATUS" : $("#addddUserStatus").val(),
+                }
+
+                $.wms.executeExternalPost('/ppa-cmis-api_origin/wsv1/api/AddUser',JSON.stringify(payload2)).done(function (result) {
+                    console.log(result);
+                    if(result.status === 'SUCCESS'){
+                        console.log("success to add user expansion.")
+                    }else{
+                        alert("Failed to add user expansion.")
+                    }
+                });
+
+                var payload3 = {
+                        "first_name"            : $("#addtxtFname").val(),
+                        "middle_name"           : $("#addtxtMname").val(),
+                        "last_name"             : $("#addtxtLname").val(),
+                        "suffix"                : "",
+                        "password"              : $("#addtxtPassword1").val(),            
+                        "email_address"         : $("#addtxtEmail").val(),
+                        "position_id"           : $("#addddSelPosition").val(),
+                        "contact_number"        : $("#addtxtContact").val(),
+                        "password_confirmation" : $("#addtxtPassword1").val(),
+                        "user_type_id"          : $("#addddUserType").val(),                 
+                        "field_office_id"       : $("#addddSelOffice").val(),     
+                }
+                
+                $.wms.executeExternalPost('/transcription_api/User_accounts/insert',JSON.stringify(payload3)).done(function (result) {
+                    console.log(result);
+                    if(result.status === 'Success'){
+                        console.log("success to add user transcription.")
+                    }else{
+                        alert("Failed to add user transcription.")
                     }
                 });
 
