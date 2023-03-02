@@ -642,7 +642,7 @@ $.wms.dashboard = (function() {
                                 "CREATED_BY" : "sysadmin",
                                 "USER_STATUS" : $("#ddUserStatus").val(),
                         }
-                        $.wms.executeExternalPost('/ppa-bug-api/wsv1/api/UpdateUserByEmail',JSON.stringify(payload1)).done(function (result) {
+                        $.wms.executeExternalPost('http://192.168.1.38/ppa-bug-api/wsv1/api/UpdateUserByEmail',JSON.stringify(payload1)).done(function (result) {
                             console.log(result);
                             if(result.status === 'SUCCESS'){
                                 console.log("success to update user bug reporting.")
@@ -669,7 +669,7 @@ $.wms.dashboard = (function() {
                                 "CREATED_BY" : "sysadmin",
                                 "USER_STATUS" : $("#ddUserStatus").val(),
                         }
-                        $.wms.executeExternalPost('/ppa-cmis-api_origin/wsv1/api/UpdateUserByEmail',JSON.stringify(payload2)).done(function (result) {
+                        $.wms.executeExternalPost('http://192.168.1.33/ppa-cmis-api_origin/wsv1/api/UpdateUserByEmail',JSON.stringify(payload2)).done(function (result) {
                             console.log(result);
                             if(result.status === 'SUCCESS'){
                                 console.log("success to update user expansion.")
@@ -691,7 +691,7 @@ $.wms.dashboard = (function() {
                                 "field_office_id"       : $("#ddSelOffice").val(),     
                         }
                         
-                        $.wms.executeExternalPost('/transcription_api/User_accounts/update_email',JSON.stringify(payload3)).done(function (result) {
+                        $.wms.executeExternalPost('http://192.168.1.35:8080/transcription_api/User_accounts/update_email',JSON.stringify(payload3)).done(function (result) {
                             console.log(result);
                             if(result.status === 'Success'){
                                 console.log("success to add user transcription.")
