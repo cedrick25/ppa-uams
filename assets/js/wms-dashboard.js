@@ -903,7 +903,7 @@ $.wms.dashboard = (function() {
                     if(result.status === 'SUCCESS'){
                         console.log("success to add user expansion.")
                     }else{
-                        alert("Failed to add user expansion.")
+                        alert("User email already exist in expansion.")
                     }
                 });
 
@@ -926,7 +926,7 @@ $.wms.dashboard = (function() {
                     if(result.status === 'Success'){
                         console.log("success to add user transcription.")
                     }else{
-                        alert("Failed to add user transcription.")
+                        alert("User email already exist in transcription.")
                     }
                 });
 
