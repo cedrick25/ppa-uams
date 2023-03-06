@@ -109,7 +109,7 @@
 	            		}else{
 	        				$(".sso_body_notallowed").append(`
 	        				<div class="col-md-6">
-	        				<button disabled="disabled"  style="border-color:black;white-space: normal !important;word-wrap: break-word;width: 100%;height:120px;align-items: center;display: flex;"  class='btn btn-lg btn-danger text-wrap'>`+result2.payload[i].INFO_SYSTEM_NAME+`\n(Not Applicable...)</button></div>
+	        				<button disabled="disabled" style="border-color:white;white-space: normal !important;word-wrap: break-word;width: 100%;height:120px;align-items: center;display: flex; background-color:#2e2f30; color:#fff"  class='btn btn-lg btn-secondary text-wrap'>`+result2.payload[i].INFO_SYSTEM_NAME+`</button></div>
 	        				`)	
 	            		}	
 	            		

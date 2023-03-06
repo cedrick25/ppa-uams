@@ -40,19 +40,19 @@ $.wms.dashboard = (function() {
 
 
            
-            var falseAnchor = $('<a/>').attr({
-                'href' : "http://192.168.1.201/login?logout=1",
-                'target' : "_new"
-            }).appendTo('body');
-            falseAnchor[0].click();
-            falseAnchor.remove();
+            // var falseAnchor = $('<a/>').attr({
+            //     'href' : "http://192.168.1.201/login?logout=1",
+            //     'target' : "_new"
+            // }).appendTo('body');
+            // falseAnchor[0].click();
+            // falseAnchor.remove();
 
-            var falseAnchor = $('<a/>').attr({
-                'href' : "http://192.168.1.204:8080/ppa/login?logout=1",
-                'target' : "_new"
-            }).appendTo('body');
-            falseAnchor[0].click();
-            falseAnchor.remove();
+            // var falseAnchor = $('<a/>').attr({
+            //     'href' : "http://192.168.1.204:8080/ppa/login?logout=1",
+            //     'target' : "_new"
+            // }).appendTo('body');
+            // falseAnchor[0].click();
+            // falseAnchor.remove();
 
           
             $.wms.executeExternalPost('/ppa-api-uams/wsv1/Cmis/AuditInsert',JSON.stringify(payload)).done(function (result) {
