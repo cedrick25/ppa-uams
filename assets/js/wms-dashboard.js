@@ -825,110 +825,136 @@ $.wms.dashboard = (function() {
             ___debug("Submit Event")
 
             if(___validateAdd()){
-                var payload = {
-                        "USER_FNAME" : $("#addtxtFname").val(),
-                        "USER_MNAME" : $("#addtxtMname").val(),
-                        "USER_LNAME" : $("#addtxtLname").val(),
-                        "USER_NAME": $("#addtxtUsername").val(),
-                        "USER_PASS" : $("#addtxtPassword1").val(),            
-                        "USER_EMAIL": $("#addtxtEmail").val(),
-                        "USER_POSITION_ID": $("#addddSelPosition").val(),
-                        "USER_CONTACT": $("#addtxtContact").val(),
-                        "USER_EXPIRY" : "",
-                        "USER_LEVEL_ID" : $("#addddUserType").val(),         
-                        "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
-                        "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
-                        "CREATED_BY" : "sysadmin",
-                        "STATUS" : $("#addddUserStatus").val(),
-                }                
+                // var payload = {
+                //         "USER_FNAME" : $("#addtxtFname").val(),
+                //         "USER_MNAME" : $("#addtxtMname").val(),
+                //         "USER_LNAME" : $("#addtxtLname").val(),
+                //         "USER_NAME": $("#addtxtUsername").val(),
+                //         "USER_PASS" : $("#addtxtPassword1").val(),            
+                //         "USER_EMAIL": $("#addtxtEmail").val(),
+                //         "USER_POSITION_ID": $("#addddSelPosition").val(),
+                //         "USER_CONTACT": $("#addtxtContact").val(),
+                //         "USER_EXPIRY" : "",
+                //         "USER_LEVEL_ID" : $("#addddUserType").val(),         
+                //         "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
+                //         "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
+                //         "CREATED_BY" : "sysadmin",
+                //         "STATUS" : $("#addddUserStatus").val(),
+                // }                
 
-                $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/AddUser',JSON.stringify(payload)).done(function (result) {
-                    console.log(result);
-                    if(result.status === 'SUCCESS'){
-                        var user_id = result.USER_ID;
-                        $("#modalAdd").modal("toggle")
-                        alert("User Added")
-                        __attachUserListEvent();
+                // $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/AddUser',JSON.stringify(payload)).done(function (result) {
+                //     console.log(result);
+                //     if(result.status === 'SUCCESS'){
+                //         var user_id = result.USER_ID;
+                //         $("#modalAdd").modal("toggle")
+                //         alert("User Added")
+                //         __attachUserListEvent();
 
-                    }else{
-                        alert("Failed to add user.")
-                    }
-                });
+                //     }else{
+                //         alert("Failed to add user.")
+                //     }
+                // });
 
-                var payload1 = {
-                        "USER_FNAME" : $("#addtxtFname").val(),
-                        "USER_MNAME" : $("#addtxtMname").val(),
-                        "USER_LNAME" : $("#addtxtLname").val(),
-                        "USER_NAME": $("#addtxtUsername").val(),
-                        "USER_PASS" : $("#addtxtPassword1").val(),            
-                        "USER_EMAIL": $("#addtxtEmail").val(),
-                        "USER_POSITION_ID": $("#addddSelPosition").val(),
-                        "USER_CONTACT": $("#addtxtContact").val(),
-                        "USER_EXPIRY" : "",
-                        "USER_LEVEL_ID" : $("#addddUserType").val(),         
-                        "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
-                        "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
-                        "CREATED_BY" : "sysadmin",
-                        "STATUS" : $("#addddUserStatus").val(),
-                }
-                $.wms.executeExternalPost('http://192.168.1.38/ppa-bug-api/wsv1/api/AddUser',JSON.stringify(payload1)).done(function (result) {
-                    console.log(result);
-                    if(result.status === 'SUCCESS'){
-                        console.log("success to add user bug reporting.")
-                    }else{
-                        alert("Failed to add user bug reporting.")
-                    }
-                });
+                // var payload1 = {
+                //         "USER_FNAME" : $("#addtxtFname").val(),
+                //         "USER_MNAME" : $("#addtxtMname").val(),
+                //         "USER_LNAME" : $("#addtxtLname").val(),
+                //         "USER_NAME": $("#addtxtUsername").val(),
+                //         "USER_PASS" : $("#addtxtPassword1").val(),            
+                //         "USER_EMAIL": $("#addtxtEmail").val(),
+                //         "USER_POSITION_ID": $("#addddSelPosition").val(),
+                //         "USER_CONTACT": $("#addtxtContact").val(),
+                //         "USER_EXPIRY" : "",
+                //         "USER_LEVEL_ID" : $("#addddUserType").val(),         
+                //         "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
+                //         "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
+                //         "CREATED_BY" : "sysadmin",
+                //         "STATUS" : $("#addddUserStatus").val(),
+                // }
+                // $.wms.executeExternalPost('http://192.168.1.38/ppa-bug-api/wsv1/api/AddUser',JSON.stringify(payload1)).done(function (result) {
+                //     console.log(result);
+                //     if(result.status === 'SUCCESS'){
+                //         console.log("success to add user bug reporting.")
+                //     }else{
+                //         alert("Failed to add user bug reporting.")
+                //     }
+                // });
 
-                var payload2 = {
-                        "USER_FULLNAME" : $("#addtxtFname").val() +" "+$("#addtxtMname").val() +" "+$("#addtxtLname").val(),
-                        "USER_FNAME" : $("#addtxtFname").val(),
-                        "USER_MNAME" : $("#addtxtMname").val(),
-                        "USER_LNAME" : $("#addtxtLname").val(),
-                        "USER_NAME": $("#addtxtUsername").val(),
-                        "USER_PASS" : $("#addtxtPassword1").val(),            
-                        "USER_EMAIL": $("#addtxtEmail").val(),
-                        // "USER_POSITION_ID": $("#addddSelPosition").val(),
-                        "USER_CONTACT": $("#addtxtContact").val(),
-                        "USER_EXPIRY" : "",
-                        "USER_LEVEL_ID" : $("#addddSelPosition").val(),         
-                        "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
-                        // "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
-                        "CREATED_BY" : "sysadmin",
-                        "STATUS" : $("#addddUserStatus").val(),
-                }
+                // var payload2 = {
+                //         "USER_FULLNAME" : $("#addtxtFname").val() +" "+$("#addtxtMname").val() +" "+$("#addtxtLname").val(),
+                //         "USER_FNAME" : $("#addtxtFname").val(),
+                //         "USER_MNAME" : $("#addtxtMname").val(),
+                //         "USER_LNAME" : $("#addtxtLname").val(),
+                //         "USER_NAME": $("#addtxtUsername").val(),
+                //         "USER_PASS" : $("#addtxtPassword1").val(),            
+                //         "USER_EMAIL": $("#addtxtEmail").val(),
+                //         // "USER_POSITION_ID": $("#addddSelPosition").val(),
+                //         "USER_CONTACT": $("#addtxtContact").val(),
+                //         "USER_EXPIRY" : "",
+                //         "USER_LEVEL_ID" : $("#addddSelPosition").val(),         
+                //         "FIELD_OFFICE" : $("#addddSelOffice :selected").text(),         
+                //         // "FIELD_OFFICE_ID" : $("#addddSelOffice").val(),         
+                //         "CREATED_BY" : "sysadmin",
+                //         "STATUS" : $("#addddUserStatus").val(),
+                // }
 
-                $.wms.executeExternalPost('http://192.168.1.33/ppa-cmis-api_origin/wsv1/api/AddUser',JSON.stringify(payload2)).done(function (result) {
-                    console.log(result);
-                    if(result.status === 'SUCCESS'){
-                        console.log("success to add user expansion.")
-                    }else{
-                        alert("User email already exist in expansion.")
-                    }
-                });
+                // $.wms.executeExternalPost('http://192.168.1.33/ppa-cmis-api_origin/wsv1/api/AddUser',JSON.stringify(payload2)).done(function (result) {
+                //     console.log(result);
+                //     if(result.status === 'SUCCESS'){
+                //         console.log("success to add user expansion.")
+                //     }else{
+                //         alert("User email already exist in expansion.")
+                //     }
+                // });
 
-                var payload3 = {
-                        "first_name"            : $("#addtxtFname").val(),
-                        "middle_name"           : $("#addtxtMname").val(),
-                        "last_name"             : $("#addtxtLname").val(),
-                        "suffix"                : "",
-                        "password"              : $("#addtxtPassword1").val(),            
-                        "email_address"         : $("#addtxtEmail").val(),
-                        "position_id"           : $("#addddSelPosition").val(),
-                        "contact_number"        : $("#addtxtContact").val(),
-                        "password_confirmation" : $("#addtxtPassword1").val(),
-                        "user_type_id"          : $("#addddUserType").val(),                 
-                        "field_office_id"       : $("#addddSelOffice").val(),     
-                }
+                // var payload3 = {
+                //         "first_name"            : $("#addtxtFname").val(),
+                //         "middle_name"           : $("#addtxtMname").val(),
+                //         "last_name"             : $("#addtxtLname").val(),
+                //         "suffix"                : "",
+                //         "password"              : $("#addtxtPassword1").val(),            
+                //         "email_address"         : $("#addtxtEmail").val(),
+                //         "position_id"           : $("#addddSelPosition").val(),
+                //         "contact_number"        : $("#addtxtContact").val(),
+                //         "password_confirmation" : $("#addtxtPassword1").val(),
+                //         "user_type_id"          : $("#addddUserType").val(),                 
+                //         "field_office_id"       : $("#addddSelOffice").val(),     
+                // }
                 
-                $.wms.executeExternalPost('http://192.168.1.35:8080/transcription_api/User_accounts/insert',JSON.stringify(payload3)).done(function (result) {
-                    console.log(result);
-                    if(result.status === 'Success'){
-                        console.log("success to add user transcription.")
+                // $.wms.executeExternalPost('http://192.168.1.35:8080/transcription_api/User_accounts/insert',JSON.stringify(payload3)).done(function (result) {
+                //     console.log(result);
+                //     if(result.status === 'Success'){
+                //         console.log("success to add user transcription.")
+                //     }else{
+                //         alert("User email already exist in transcription.")
+                //     }
+                // });
+
+                var payloadPPIS = {
+                    "updatedBy"     : "",
+                    "updatedDate"   : "",
+                    "firstName"     : $("#addtxtFname").val(),
+                    "middleName"    : $("#addtxtMname").val(),
+                    "lastName"      : $("#addtxtLname").val(),
+                    "suffix"        : "",
+                    "corpKey"       : "",
+                    "username"      : "",
+                    "email"         : $("#addtxtEmail").val(),
+                    "phoneNumber"   : $("#addtxtContact").val(),
+                    "birthday"      : "",
+                    "password"      : $("#addtxtPassword1").val(),
+                    "departmentId"  : $("#addddSelOffice").val(),
+                    "roleId"        : $("#addddSelPosition").val(),
+                }
+                console.log(payloadPPIS);
+                __executeExternalPost('http://192.168.1.147:8088/user/create',JSON.stringify(payloadPPIS)).done(function (resultPPIS) {
+                    console.log(resultPPIS);
+                    if (resultPPIS.status != "ERROR") {
+                        console.log("success to add user in PPIS.")
                     }else{
-                        alert("User email already exist in transcription.")
+                        alert("User email already exist in PPIS.")
                     }
-                });
+                })
 
             }else{
                 //@TODO
