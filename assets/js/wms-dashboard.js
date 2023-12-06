@@ -938,7 +938,7 @@ $.wms.dashboard = (function() {
                     "lastName"      : $("#addtxtLname").val(),
                     "suffix"        : "",
                     "corpKey"       : "",
-                    "username"      : "",
+                    "username"      : $("#addtxtUsername").val(),
                     "email"         : $("#addtxtEmail").val(),
                     "phoneNumber"   : $("#addtxtContact").val(),
                     "birthday"      : "",
