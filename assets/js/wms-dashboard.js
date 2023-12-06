@@ -947,7 +947,7 @@ $.wms.dashboard = (function() {
                     "roleId"        : $("#addddSelPosition").val(),
                 }
                 console.log(payloadPPIS);
-                __executeExternalPost('http://192.168.1.147:8088/user/create',JSON.stringify(payloadPPIS)).done(function (resultPPIS) {
+                $.wms.executeExternalPost('http://192.168.1.147:8088/user/create',JSON.stringify(payloadPPIS)).done(function (resultPPIS) {
                     console.log(resultPPIS);
                     if (resultPPIS.status != "ERROR") {
                         console.log("success to add user in PPIS.")
