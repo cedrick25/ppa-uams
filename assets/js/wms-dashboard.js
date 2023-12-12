@@ -657,7 +657,7 @@ $.wms.dashboard = (function() {
                                 "USER_FNAME" : $("#txtFname").val(),
                                 "USER_MNAME" : $("#txtMname").val(),
                                 "USER_LNAME" : $("#txtLname").val(),
-                                "USER_NAME": $("#txtUsername").val(),
+                                "USER_NAME" : $("#txtUsername").val(),
                                 "USER_PASS" : $("#txtUpdatePassword1").val(),       
                                 "USER_EMAIL": $("#txtEmail").val(),
                                 "USER_CONTACT": $("#txtContact").val(),
@@ -694,11 +694,35 @@ $.wms.dashboard = (function() {
                         $.wms.executeExternalPost('http://192.168.1.35:8080/transcription_api/User_accounts/update_email',JSON.stringify(payload3)).done(function (result) {
                             console.log(result);
                             if(result.status === 'Success'){
-                                console.log("success to add user transcription.")
+                                console.log("success to update user transcription.")
                             }else{
-                                alert("Failed to add user transcription.")
+                                alert("Failed to update user transcription.")
                             }
                         });
+
+                        var payloadPPISupd = {
+                            "firstName"     : $("#txtFname").val(),
+                            "middleName"    : $("#txtMname").val(),
+                            "lastName"      : $("#txtLname").val(),
+                            "suffix"        : "",
+                            "corpKey"       : "",
+                            "username"      : $("#txtUsername").val(),
+                            "email"         : $("#txtEmail").val(),
+                            "phoneNumber"   : $("#txtContact").val(),
+                            "birthday"      : "",
+                            "password"      : $("#txtUpdatePassword1").val(),
+                            "departmentId"  : $("#ddSelOffice").val(),
+                            "roleId"        : $("#ddSelPosition").val(),
+                        }
+
+                        $.wms.executeExternalPost2('http://192.168.1.147:8088/user/update/'+$("#txtEmail").val(),JSON.stringify(payloadPPISupd)).done(function (resultPPIS) {
+                            console.log(result);
+                            if(result.status === 'Success'){
+                                console.log("success to update user PPIS.")
+                            }else{
+                                alert("Failed to update user PPIS.")
+                            }
+                        })
                     });
 
                 });
