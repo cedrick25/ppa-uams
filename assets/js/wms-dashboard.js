@@ -700,29 +700,29 @@ $.wms.dashboard = (function() {
                             }
                         });
 
-                        var payloadPPISupd = {
-                            "firstName"     : $("#txtFname").val(),
-                            "middleName"    : $("#txtMname").val(),
-                            "lastName"      : $("#txtLname").val(),
-                            "suffix"        : "",
-                            "corpKey"       : "",
-                            "username"      : $("#txtUsername").val(),
-                            "email"         : $("#txtEmail").val(),
-                            "phoneNumber"   : $("#txtContact").val(),
-                            "birthday"      : "",
-                            "password"      : $("#txtUpdatePassword1").val(),
-                            "departmentId"  : $("#ddSelOffice").val(),
-                            "roleId"        : $("#ddSelPosition").val(),
-                        }
+                        // var payloadPPISupd = {
+                        //     "firstName"     : $("#txtFname").val(),
+                        //     "middleName"    : $("#txtMname").val(),
+                        //     "lastName"      : $("#txtLname").val(),
+                        //     "suffix"        : "",
+                        //     "corpKey"       : "",
+                        //     "username"      : $("#txtUsername").val(),
+                        //     "email"         : $("#txtEmail").val(),
+                        //     "phoneNumber"   : $("#txtContact").val(),
+                        //     "birthday"      : "",
+                        //     "password"      : $("#txtUpdatePassword1").val(),
+                        //     "departmentId"  : $("#ddSelOffice").val(),
+                        //     "roleId"        : $("#ddSelPosition").val(),
+                        // }
 
-                        $.wms.executeExternalPost2('http://192.168.1.147:8088/user/update/'+$("#txtEmail").val(),JSON.stringify(payloadPPISupd)).done(function (resultPPIS) {
-                            console.log(result);
-                            if(result.status === 'Success'){
-                                console.log("success to update user PPIS.")
-                            }else{
-                                alert("Failed to update user PPIS.")
-                            }
-                        })
+                        // $.wms.executeExternalPost2('http://192.168.1.147:8088/user/update/'+$("#txtEmail").val(),JSON.stringify(payloadPPISupd)).done(function (resultPPIS) {
+                        //     console.log(result);
+                        //     if(result.status === 'Success'){
+                        //         console.log("success to update user PPIS.")
+                        //     }else{
+                        //         alert("Failed to update user PPIS.")
+                        //     }
+                        // })
                     });
 
                 });
@@ -954,31 +954,31 @@ $.wms.dashboard = (function() {
                     }
                 });
 
-                var payloadPPIS = {
-                    "updatedBy"     : "",
-                    "updatedDate"   : "",
-                    "firstName"     : $("#addtxtFname").val(),
-                    "middleName"    : $("#addtxtMname").val(),
-                    "lastName"      : $("#addtxtLname").val(),
-                    "suffix"        : "",
-                    "corpKey"       : "",
-                    "username"      : $("#addtxtUsername").val(),
-                    "email"         : $("#addtxtEmail").val(),
-                    "phoneNumber"   : $("#addtxtContact").val(),
-                    "birthday"      : "",
-                    "password"      : $("#addtxtPassword1").val(),
-                    "departmentId"  : $("#addddSelOffice").val(),
-                    "roleId"        : $("#addddSelPosition").val(),
-                }
-                console.log(payloadPPIS);
-                $.wms.executeExternalPost2('http://192.168.1.147:8088/user/create',JSON.stringify(payloadPPIS)).done(function (resultPPIS) {
-                    console.log(resultPPIS);
-                    if (resultPPIS.status != "ERROR") {
-                        console.log("success to add user in PPIS.")
-                    }else{
-                        alert("User email already exist in PPIS.")
-                    }
-                })
+                // var payloadPPIS = {
+                //     "updatedBy"     : "",
+                //     "updatedDate"   : "",
+                //     "firstName"     : $("#addtxtFname").val(),
+                //     "middleName"    : $("#addtxtMname").val(),
+                //     "lastName"      : $("#addtxtLname").val(),
+                //     "suffix"        : "",
+                //     "corpKey"       : "",
+                //     "username"      : $("#addtxtUsername").val(),
+                //     "email"         : $("#addtxtEmail").val(),
+                //     "phoneNumber"   : $("#addtxtContact").val(),
+                //     "birthday"      : "",
+                //     "password"      : $("#addtxtPassword1").val(),
+                //     "departmentId"  : $("#addddSelOffice").val(),
+                //     "roleId"        : $("#addddSelPosition").val(),
+                // }
+                // console.log(payloadPPIS);
+                // $.wms.executeExternalPost2('http://192.168.1.147:8088/user/create',JSON.stringify(payloadPPIS)).done(function (resultPPIS) {
+                //     console.log(resultPPIS);
+                //     if (resultPPIS.status != "ERROR") {
+                //         console.log("success to add user in PPIS.")
+                //     }else{
+                //         alert("User email already exist in PPIS.")
+                //     }
+                // })
 
             }else{
                 //@TODO
