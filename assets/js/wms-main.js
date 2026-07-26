@@ -30,9 +30,69 @@ $.wms = (function() {
          ___ctx = "http://cmis.probation.gov.ph/api";
     }*/
 
+    if (typeof window.APP_CONFIG !== 'undefined' && window.APP_CONFIG.apiContext) {
+        ___ctx = window.APP_CONFIG.apiContext;
+    }
 
     var __setContext = function(newctx) {
         ___ctx = newctx;
+    };
+
+    /**
+     * Resolve API / asset URLs dynamically from APP_CONFIG.
+     * Rewrites hardcoded LAN IPs and path prefixes so HTTPS (no mixed content) works.
+     */
+    var __resolveUrl = function(path) {
+        if (!path || typeof path !== 'string') {
+            return path;
+        }
+
+        var cfg = (typeof window.APP_CONFIG !== 'undefined' && window.APP_CONFIG) ? window.APP_CONFIG : {};
+        var apiUams = cfg.apiUams || '/ppa-api-uams';
+        var apiCmis = cfg.apiCmis || '/ppa-api';
+        var apiWms = cfg.apiWms || '/wms';
+        var bugApi = cfg.bugApi || '/ppa-bug-api';
+        var cmisSyncApi = cfg.cmisSyncApi || '/ppa-cmis-api_origin';
+        var transcriptionApi = cfg.transcriptionApi || '/transcription_api';
+        var pisBase = cfg.pisBase || 'https://pis.probation.gov.ph';
+
+        var legacy = [
+            { re: /^https?:\/\/192\.168\.1\.200\/ppa-api-uams/i, to: apiUams },
+            { re: /^https?:\/\/192\.168\.1\.38\/ppa-bug-api/i, to: bugApi },
+            { re: /^https?:\/\/192\.168\.1\.33\/ppa-cmis-api_origin/i, to: cmisSyncApi },
+            { re: /^https?:\/\/192\.168\.1\.35:8080\/transcription_api/i, to: transcriptionApi },
+            { re: /^https?:\/\/pis\.probation\.gov\.ph/i, to: pisBase }
+        ];
+        for (var i = 0; i < legacy.length; i++) {
+            if (legacy[i].re.test(path)) {
+                return path.replace(legacy[i].re, legacy[i].to);
+            }
+        }
+
+        if (/^https?:\/\//i.test(path)) {
+            // Upgrade same-host http -> https when page is HTTPS (avoid mixed content)
+            if (window.location && window.location.protocol === 'https:' && path.indexOf('http://' + window.location.host) === 0) {
+                return 'https://' + path.substring(('http://' + window.location.host).length);
+            }
+            return path;
+        }
+
+        var prefixes = [
+            { key: '/ppa-api-uams', val: apiUams },
+            { key: '/ppa-bug-api', val: bugApi },
+            { key: '/ppa-cmis-api_origin', val: cmisSyncApi },
+            { key: '/transcription_api', val: transcriptionApi },
+            { key: '/ppa-api', val: apiCmis },
+            { key: '/wms', val: apiWms }
+        ];
+        for (var j = 0; j < prefixes.length; j++) {
+            var p = prefixes[j];
+            if (path === p.key || path.indexOf(p.key + '/') === 0 || path.indexOf(p.key + '?') === 0) {
+                return p.val + path.substring(p.key.length);
+            }
+        }
+
+        return (___ctx || '') + path;
     };
 
 
@@ -70,10 +130,17 @@ $.wms = (function() {
     };
 
     var __getImgPath = function(){
-        //return "/wms-portal/";
+        var cfg = (typeof window.APP_CONFIG !== 'undefined' && window.APP_CONFIG) ? window.APP_CONFIG : {};
+        if (cfg.basePath) {
+            return cfg.basePath + '/';
+        }
         return "/";
     }
+    var __getContextPath = function() {
+        return ___ctx;
+    };
 	var __executeGet = function (path) {
+        path = __resolveUrl(path);
         var dfd = $.Deferred();
         $.get(path, function(data) {})
         .done(function(data){
@@ -91,7 +158,7 @@ $.wms = (function() {
         return dfd.promise();
     };
     var __executePost = function(path, jsonObj, customLoader) {
-        path = $.wms.getContextPath() + path;
+        path = __resolveUrl(path);
         var d = $.Deferred();
         if(customLoader != ""){
             $("#"+customLoader).show();
@@ -126,7 +193,7 @@ $.wms = (function() {
         return d.promise();
     };
     var __executeExternalPost2 = function(path, jsonObj, customLoader) {
-        path = __getContext() + path;
+        path = __resolveUrl(path);
         var d = $.Deferred();
         if(customLoader != ""){
             $("#"+customLoader).show();
@@ -169,7 +236,7 @@ $.wms = (function() {
     };
 
     var __executeExternalPost = function(path, jsonObj, customLoader) {
-        path = $.wms.getContext() + path;
+        path = __resolveUrl(path);
         var d = $.Deferred();
         if(customLoader != ""){
             $("#"+customLoader).show();
@@ -208,7 +275,7 @@ $.wms = (function() {
     };
 
     var __executeExternalGet = function(path, customLoader) {
-        // path = $.wms.getContextPath() + path;
+        path = __resolveUrl(path);
         var d = $.Deferred();
         if(customLoader != ""){
             $("#"+customLoader).show();
@@ -248,6 +315,7 @@ $.wms = (function() {
 
 
     var __executeFile = function(path, jsonObj) {
+        path = __resolveUrl(path);
         var d = $.Deferred();
             $(".overlay-back").show();
             $(".loadDiv").show();
@@ -290,6 +358,8 @@ $.wms = (function() {
     return {
         setContext:__setContext,
         getContext : __getContext,
+        getContextPath : __getContextPath,
+        resolveUrl : __resolveUrl,
         getImgPath : __getImgPath,
         executePost : __executePost,
         executeExternalPost : __executeExternalPost,

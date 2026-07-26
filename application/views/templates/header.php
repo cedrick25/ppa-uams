@@ -4,6 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 <html lang="en">
 <head>
 	<meta charset="utf-8">
+	<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 	<title>UAMS - Parole and Probation Administration</title>
 	<link rel="icon" href="<?php echo BASE_URL(); ?>assets/img/favicon-main-ppa.png">
 

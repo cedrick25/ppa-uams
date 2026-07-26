@@ -2,6 +2,11 @@
   RewriteEngine On
   #RewriteBase /wms/
 
+  # Trust reverse-proxy HTTPS (Nginx Proxy Manager / rpxy.probation.gov.ph)
+  # Uncomment to force HTTPS when X-Forwarded-Proto is present but request is HTTP:
+  # RewriteCond %{HTTP:X-Forwarded-Proto} =http
+  # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
   #RewriteCond %{REQUEST_FILENAME} !-f
   #RewriteRule ^ index.php [QSA,L]
   RewriteCond %{REQUEST_FILENAME} !-f

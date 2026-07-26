@@ -22,7 +22,7 @@
 							    	
 									<h4 style="color:black;">Restoring of Back-Up file requires clean database as it might interfere with existing database. This is usually executed on new Instance of PPCMIS Portal. Please upload the sql file. Proceed with Caution.</h4><br/>
 									
-							    	<form action="/ppa-api/wsv1/Api/full_restore" method="post" enctype="multipart/form-data">
+							    	<form action="<?php echo app_api_path('cmis'); ?>/wsv1/Api/full_restore" method="post" enctype="multipart/form-data">
 									    Select SQL to upload:
 									    <input class="form-control" type="file" name="fileToUpload" id="fileToUpload">
 										<center>

@@ -119,7 +119,8 @@
 	            var field = $("#filter_office").val();
 	            let a= document.createElement('a');
 				a.target= '_blank';
-				a.href= "/ppa-api/wsv1/api/migrate_offline?submit=yes&field="+field+"&date="+date;
+				var apiCmis = (window.APP_CONFIG && window.APP_CONFIG.apiCmis) ? window.APP_CONFIG.apiCmis : '/ppa-api';
+				a.href= apiCmis + "/wsv1/api/migrate_offline?submit=yes&field="+field+"&date="+date;
 				a.click();
     		});
 

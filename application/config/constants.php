@@ -12,8 +12,23 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 defined('SHOW_DEBUG_BACKTRACE') OR define('SHOW_DEBUG_BACKTRACE', TRUE);
-define('MIN_URL',"/ppa-uams/min?f=/ppa-uams/");
-// define('MIN_URL',"/ppa-uams/");
+
+/*
+|--------------------------------------------------------------------------
+| Dynamic app base path (works behind reverse proxy / subdirectory)
+|--------------------------------------------------------------------------
+*/
+if (!defined('APP_BASE_PATH')) {
+	$__app_script = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', $_SERVER['SCRIPT_NAME']) : '';
+	$__app_dir = str_replace('\\', '/', dirname($__app_script));
+	if ($__app_dir === '/' || $__app_dir === '\\' || $__app_dir === '.') {
+		$__app_dir = '';
+	} else {
+		$__app_dir = rtrim($__app_dir, '/');
+	}
+	define('APP_BASE_PATH', $__app_dir);
+}
+defined('MIN_URL') OR define('MIN_URL', APP_BASE_PATH . '/min?f=' . APP_BASE_PATH . '/');
 /*
 |--------------------------------------------------------------------------
 | File and Directory Modes

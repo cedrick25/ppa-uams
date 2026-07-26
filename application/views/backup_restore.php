@@ -21,7 +21,7 @@
 								<div class="panel-body">
 							    	
 									<h3 style="color:black;">Backing-up of all record might take several moments... <br/>Click "Back-Up Now" to proceed.</h3><br/>
-							    	<center><a href="/ppa-api/wsv1/Api/backup" target="_new" class="btn btn-large btn-success btnBackup">Back-Up Now</a></center>
+							    	<center><a href="<?php echo app_api_path('cmis'); ?>/wsv1/Api/backup" target="_new" class="btn btn-large btn-success btnBackup">Back-Up Now</a></center>
 
 						 		<br/><br/>
 						 			

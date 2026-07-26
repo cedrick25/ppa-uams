@@ -937,7 +937,7 @@ $.wms.monitoring = (function() {
 
             var bounds = new google.maps.LatLngBounds();
             var infowindow = new google.maps.InfoWindow()
-            var icons = "http://162.253.225.18/FFWS/29022-200_-copy.png";
+            var icons = ((window.APP_CONFIG && window.APP_CONFIG.isHttps) ? 'https' : 'http') + "://162.253.225.18/FFWS/29022-200_-copy.png";
             // Create markers.
             station.forEach(function(feature) {
                 bounds.extend(feature.position);

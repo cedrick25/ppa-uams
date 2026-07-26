@@ -22,7 +22,7 @@
 							    	
 									<h4 style="color:black;">You must restore data from back-ups from "Back-Up of Record from Range Date" Page. Please Proceed with cautions.</h4><br/>
 									
-							    	<form action="/ppa-api/wsv1/Api/full_restore" method="post" enctype="multipart/form-data">
+							    	<form action="<?php echo app_api_path('cmis'); ?>/wsv1/Api/full_restore" method="post" enctype="multipart/form-data">
 									    Select SQL to upload:
 									    <input class="form-control" type="file" name="fileToUpload" id="fileToUpload">
 										<center>

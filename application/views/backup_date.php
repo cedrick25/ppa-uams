@@ -21,7 +21,7 @@
 								<div class="panel-body">
 							    	
 									<h3 style="color:black;">Backing-up of some record might take several moments... <br/>Click "Back-Up Now" to proceed.</h3><br/>
-									<form method="post" action="/ppa-api/wsv1/Api/backupDate" target="_blank">
+									<form method="post" action="<?php echo app_api_path('cmis'); ?>/wsv1/Api/backupDate" target="_blank">
 										<b>Start Date:</b><input type="month" name="start"><br/>
 										<b>End-Date:</b><input type="month" name="end"><br/>
 								    	<center><button  class="btn btn-large btn-success btnBackup">Back-Up Now</button></center>

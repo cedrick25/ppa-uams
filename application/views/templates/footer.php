@@ -51,6 +51,9 @@
 	<script src="<?php echo MIN_URL; ?>assets/js/vfs_fonts.js"></script>
 	<script src="<?php echo MIN_URL; ?>assets/js/shortcuts.js"></script>
 
+	<!-- App URL config (dynamic / HTTPS-ready) -->
+	<?php echo app_config_js(); ?>
+
 	<!-- WMS JS -->
 	<script src="assets/js/wms-main.js?version=<?php echo filemtime("assets/js/wms-main.js"); ?>"></script>
 	<script src="assets/js/wms-login.js?version=<?php echo filemtime("assets/js/wms-login.js"); ?>"></script>

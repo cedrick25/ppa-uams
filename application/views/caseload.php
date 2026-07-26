@@ -169,7 +169,8 @@
 		            $.wms.executeExternalPost('/ppa-api/wsv1/Pis/getFactSheet',JSON.stringify(payload)).done(function (result) {
 		            	console.log(result);
 		            	if(result.status === "SUCCESS"){
-		            		var URL = "http://pis.probation.gov.ph/petitioner/profile/"+result.payload.PETITIONER
+		            		var pisBase = (window.APP_CONFIG && window.APP_CONFIG.pisBase) ? window.APP_CONFIG.pisBase : 'https://pis.probation.gov.ph';
+		            		var URL = pisBase + "/petitioner/profile/"+result.payload.PETITIONER
 		            		window.open(URL, '_blank');
 		            	}else{
 		            		alert("Data Not Found in Probation Information System")
@@ -186,7 +187,8 @@
 		            $.wms.executeExternalPost('/ppa-api/wsv1/Pis/getFactSheet',JSON.stringify(payload)).done(function (result) {
 		            	console.log(result);
 		            	if(result.status === "SUCCESS"){
-		            		var URL = "http://pis.probation.gov.ph/petitioner/profile/"+result.payload.PETITIONER
+		            		var pisBase = (window.APP_CONFIG && window.APP_CONFIG.pisBase) ? window.APP_CONFIG.pisBase : 'https://pis.probation.gov.ph';
+		            		var URL = pisBase + "/petitioner/profile/"+result.payload.PETITIONER
 		            		window.open(URL, '_blank');
 		            	}else{
 		            		alert("Data Not Found in Probation Information System")
@@ -203,7 +205,8 @@
 		            $.wms.executeExternalPost('/ppa-api/wsv1/Pis/getDocketInvID',JSON.stringify(payload)).done(function (result) {
 		            	console.log(result);
 		            	if(result.status === "SUCCESS"){
-		            		var URL = "http://pis.probation.gov.ph/docketbook/view/investigation/"+result.payload.PETITIONER
+		            		var pisBase = (window.APP_CONFIG && window.APP_CONFIG.pisBase) ? window.APP_CONFIG.pisBase : 'https://pis.probation.gov.ph';
+		            		var URL = pisBase + "/docketbook/view/investigation/"+result.payload.PETITIONER
 		            		window.open(URL, '_blank');
 		            	}else{
 		            		alert("Data Not Found in Probation Information System")
@@ -220,7 +223,8 @@
 		            $.wms.executeExternalPost('/ppa-api/wsv1/Pis/getDocketInvID',JSON.stringify(payload)).done(function (result) {
 		            	console.log(result);
 		            	if(result.status === "SUCCESS"){
-		            		var URL = "http://pis.probation.gov.ph/docketbook/view/investigation/"+result.payload.PETITIONER
+		            		var pisBase = (window.APP_CONFIG && window.APP_CONFIG.pisBase) ? window.APP_CONFIG.pisBase : 'https://pis.probation.gov.ph';
+		            		var URL = pisBase + "/docketbook/view/investigation/"+result.payload.PETITIONER
 		            		window.open(URL, '_blank');
 		            	}else{
 		            		alert("Data Not Found in Probation Information System")

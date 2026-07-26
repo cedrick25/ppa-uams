@@ -5,7 +5,7 @@ $ipaddress = '';
 if (isset($_SERVER['HTTP_CLIENT_IP']))
     $ipaddress = $_SERVER['HTTP_CLIENT_IP'];
 else if(isset($_SERVER['HTTP_X_FORWARDED_FOR']))
-    $ipaddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    $ipaddress = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
 else if(isset($_SERVER['HTTP_X_FORWARDED']))
     $ipaddress = $_SERVER['HTTP_X_FORWARDED'];
 else if(isset($_SERVER['HTTP_X_CLUSTER_CLIENT_IP']))
@@ -19,13 +19,33 @@ else if(isset($_SERVER['REMOTE_ADDR']))
 else
     $ipaddress = 'UNKNOWN';
 
+$__req_host = '';
+if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+	$__req_host = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_HOST'])[0]);
+} elseif (!empty($_SERVER['HTTP_HOST'])) {
+	$__req_host = $_SERVER['HTTP_HOST'];
+} elseif (!empty($_SERVER['SERVER_NAME'])) {
+	$__req_host = $_SERVER['SERVER_NAME'];
+}
+$__req_host = strtolower(preg_replace('/:\d+$/', '', $__req_host));
+
+$__public_hosts = array(
+	'rpxy.probation.gov.ph',
+	'uams.probation.gov.ph',
+	'localhost',
+	'127.0.0.1',
+	'ks',
+);
+$__allow_by_host = in_array($__req_host, $__public_hosts, TRUE)
+	|| (substr($__req_host, -strlen('.probation.gov.ph')) === '.probation.gov.ph');
 
 $allowed = array("192.168.1" , "192.168.8", "192.168.10", "192.168.20", "192.168.30", "192.168.40", "192.168.50", "192.168.60", "192.168.70", "192.168.80", "192.168.90", "192.168.100", "192.168.110", "172.168.0", "192.168.30","10.10.10","192.168.254","192.168.0","10.0.8","20.20.20");
 $uIP =explode(".",$ipaddress);
 array_pop($uIP);
 $uIP = implode(".",$uIP);
 #echo $uIP;
-if(!in_array($uIP, $allowed)){
+# Allow LAN ranges OR known public/proxy hosts (HTTPS reverse proxy)
+if(!$__allow_by_host && !in_array($uIP, $allowed)){
 	die();
 }
 #echo $_SERVER['SERVER_NAME'];
@@ -62,7 +82,24 @@ if(!in_array($uIP, $allowed)){
 |
 */
 date_default_timezone_set('Asia/Manila');
-$config['base_url'] = " ";
+
+$__is_https = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+	|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+	|| (!empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower((string) $_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off')
+	|| (!empty($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
+$__protocol = $__is_https ? 'https' : 'http';
+$__base_host = $__req_host !== '' ? $__req_host : 'localhost';
+$__script = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', $_SERVER['SCRIPT_NAME']) : '';
+$__base_path = str_replace('\\', '/', dirname($__script));
+if ($__base_path === '/' || $__base_path === '\\' || $__base_path === '.') {
+	$__base_path = '';
+} else {
+	$__base_path = rtrim($__base_path, '/');
+}
+$__env_base = getenv('APP_BASE_URL');
+$config['base_url'] = $__env_base
+	? rtrim($__env_base, '/') . '/'
+	: $__protocol . '://' . $__base_host . $__base_path . '/';
 
 
 /*
@@ -443,8 +480,8 @@ $config['sess_regenerate_destroy'] = FALSE;
 $config['cookie_prefix']	= '';
 $config['cookie_domain']	= '';
 $config['cookie_path']		= '/';
-$config['cookie_secure']	= FALSE;
-$config['cookie_httponly'] 	= FALSE;
+$config['cookie_secure']	= $__is_https ? TRUE : FALSE;
+$config['cookie_httponly'] 	= TRUE;
 
 /*
 |--------------------------------------------------------------------------
@@ -560,4 +597,7 @@ $config['rewrite_short_tags'] = FALSE;
 | Comma-separated:	'10.0.1.200,192.168.5.0/24'
 | Array:		array('10.0.1.200', '192.168.5.0/24')
 */
-$config['proxy_ips'] = '';
+$__proxy_env = getenv('PROXY_IPS');
+$config['proxy_ips'] = ($__proxy_env !== FALSE && $__proxy_env !== '')
+	? $__proxy_env
+	: array('127.0.0.1', '::1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16');
