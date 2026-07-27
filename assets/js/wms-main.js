@@ -51,15 +51,17 @@ $.wms = (function() {
         var apiUams = cfg.apiUams || '/ppa-api-uams';
         var apiCmis = cfg.apiCmis || '/ppa-api';
         var apiWms = cfg.apiWms || '/wms';
-        var bugApi = cfg.bugApi || '/ppa-bug-api';
-        var cmisSyncApi = cfg.cmisSyncApi || '/ppa-cmis-api_origin';
+        var bugApi = cfg.bugApi || 'https://brs.probation.gov.ph/ppa-bug-api';
+        var cmisSyncApi = cfg.cmisSyncApi || 'https://eppcmis.probation.gov.ph/ppa-cmis-api_origin';
         var transcriptionApi = cfg.transcriptionApi || '/transcription_api';
         var pisBase = cfg.pisBase || 'https://pis.probation.gov.ph';
 
         var legacy = [
             { re: /^https?:\/\/192\.168\.1\.200\/ppa-api-uams/i, to: apiUams },
             { re: /^https?:\/\/192\.168\.1\.38\/ppa-bug-api/i, to: bugApi },
+            { re: /^https?:\/\/uams\.probation\.gov\.ph\/ppa-bug-api/i, to: bugApi },
             { re: /^https?:\/\/192\.168\.1\.33\/ppa-cmis-api_origin/i, to: cmisSyncApi },
+            { re: /^https?:\/\/uams\.probation\.gov\.ph\/ppa-cmis-api_origin/i, to: cmisSyncApi },
             { re: /^https?:\/\/192\.168\.1\.35:8080\/transcription_api/i, to: transcriptionApi },
             { re: /^https?:\/\/pis\.probation\.gov\.ph/i, to: pisBase }
         ];
