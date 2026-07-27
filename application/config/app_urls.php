@@ -27,5 +27,5 @@ $config['api_cmis']          = getenv('CMIS_API_PATH') ?: '/ppa-api';
 $config['api_wms']           = getenv('WMS_API_PATH') ?: '/wms';
 $config['bug_api']           = getenv('BUG_API_BASE') ?: 'https://brs.probation.gov.ph/ppa-bug-api';
 $config['cmis_sync_api']     = getenv('CMIS_SYNC_API_BASE') ?: 'https://eppcmis.probation.gov.ph/ppa-cmis-api_origin';
-$config['transcription_api'] = getenv('TRANSCRIPTION_API_BASE') ?: '/transcription_api';
+$config['transcription_api'] = getenv('TRANSCRIPTION_API_BASE') ?: 'https://rcts.probation.gov.ph/transcription_api';
 $config['pis_base']          = getenv('PIS_BASE_URL') ?: 'https://pis.probation.gov.ph';

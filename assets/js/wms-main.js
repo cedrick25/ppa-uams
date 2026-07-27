@@ -53,7 +53,7 @@ $.wms = (function() {
         var apiWms = cfg.apiWms || '/wms';
         var bugApi = cfg.bugApi || 'https://brs.probation.gov.ph/ppa-bug-api';
         var cmisSyncApi = cfg.cmisSyncApi || 'https://eppcmis.probation.gov.ph/ppa-cmis-api_origin';
-        var transcriptionApi = cfg.transcriptionApi || '/transcription_api';
+        var transcriptionApi = cfg.transcriptionApi || 'https://rcts.probation.gov.ph/transcription_api';
         var pisBase = cfg.pisBase || 'https://pis.probation.gov.ph';
 
         var legacy = [

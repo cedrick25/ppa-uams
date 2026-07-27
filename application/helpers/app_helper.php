@@ -61,7 +61,7 @@ if (!function_exists('app_url_config')) {
 			'api_wms' => '/wms',
 			'bug_api' => 'https://brs.probation.gov.ph/ppa-bug-api',
 			'cmis_sync_api' => 'https://eppcmis.probation.gov.ph/ppa-cmis-api_origin',
-			'transcription_api' => '/transcription_api',
+			'transcription_api' => 'https://rcts.probation.gov.ph/transcription_api',
 			'pis_base' => 'https://pis.probation.gov.ph',
 			'app_public_hosts' => array('rpxy.probation.gov.ph', 'uams.probation.gov.ph', 'localhost', '127.0.0.1', 'ks'),
 			'app_allow_probation_gov_ph' => TRUE,
