@@ -95,7 +95,7 @@ $.wms.login = (function() {
                             CREATED_BY : "1",
                             message_DATETIME : dt
                         }
-                        $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/insertSMSManually',JSON.stringify(payload3)).done(function (result2) {
+                        $.wms.executeExternalPost('https://otp.probation.gov.ph/ppa-api-otp/wsv1/api/insertSMSManually',JSON.stringify(payload3)).done(function (result2) {
                             
                         });
 
@@ -119,7 +119,7 @@ $.wms.login = (function() {
                                 CREATED_BY : "1",
                                 message_DATETIME : dt
                             }
-                            $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/insertSMSManually',JSON.stringify(payload3)).done(function (result2) {
+                            $.wms.executeExternalPost('https://otp.probation.gov.ph/ppa-api-otp/wsv1/api/insertSMSManually',JSON.stringify(payload3)).done(function (result2) {
                             });
 
 
