@@ -61,6 +61,10 @@ $min_allowDebugFlag = false;
 //$min_cachePath = 'c:\\WINDOWS\\Temp';
 //$min_cachePath = '/tmp';
 //$min_cachePath = preg_replace('/^\\d+;/', '', session_save_path());
+// Empty string keeps Minify's default file cache. It must be defined: App.php
+// passes these names to compact(), and PHP 7.3+ warns on undefined variables.
+// With display_errors on, that warning is HTML and breaks the JS/CSS response.
+$min_cachePath = '';
 
 
 /**
@@ -189,6 +193,9 @@ $min_symlinks = array();
  */
 $min_uploaderHoursBehind = 0;
 
+// Same defaults as Minify\Config. Defined so compact() does not warn.
+$min_envArgs = array();
+$min_factories = array();
 
 /**
  * Advanced: you can replace some of the PHP classes Minify uses to serve requests.

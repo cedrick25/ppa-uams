@@ -28,7 +28,7 @@ if (!defined('APP_BASE_PATH')) {
 	}
 	define('APP_BASE_PATH', $__app_dir);
 }
-defined('MIN_URL') OR define('MIN_URL', APP_BASE_PATH . '/min?f=' . APP_BASE_PATH . '/');
+defined('MIN_URL') OR define('MIN_URL', APP_BASE_PATH . '/min/?f=' . APP_BASE_PATH . '/');
 /*
 |--------------------------------------------------------------------------
 | File and Directory Modes
