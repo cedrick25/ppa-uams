@@ -51,10 +51,11 @@ Face ID is a camera check. It does not use Windows Hello, and it does not ask fo
 
 1. Sign in with username and password, then choose **Face ID**.
 2. Allow the camera. Pick **Built-in camera** or **Third-party webcam**. If several cameras are in that group, pick one from the list and check the preview.
-3. Look at that camera. The first time, choose **Save Face ID**. Later sign-ins, stay in view of that camera. Face ID signs you in when the face matches, without another button.
-4. A match on that camera opens the dashboard. If the face is not recognized, stay on the camera and try again, or use SMS OTP.
+3. Look at that camera. The oval turns green when your face is centered, large enough, evenly lit, sharp, and still. Follow the prompt if it asks you to move closer, move back, add light, turn toward the camera, or hold still. Sunglasses and anything covering the eyes stop the check. Remove them, or use SMS OTP or your PIN.
+4. The first time, choose **Save Face ID** only after the oval is green. The page takes three samples a moment apart while you hold still. Later sign-ins match automatically against those samples when the oval is green. The match still requires a similarity of 0.82. Camera frames are discarded after the template is built. Only the numeric templates are stored.
+5. A match on that camera opens the dashboard. After five failed matches, Face ID pauses for that sign-in and asks for SMS OTP or a PIN.
 
-Use the same camera you enrolled. A fingerprint scanner is not part of this step.
+Use the same camera you enrolled. Before relying on it, try that laptop in normal room light, in a dim room, and from a closer and a farther seat. A fingerprint scanner is not part of this step.
 
 ## PIN and SMS
 

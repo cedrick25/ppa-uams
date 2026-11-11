@@ -61,6 +61,9 @@
   border-radius: 50%;
   box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.28);
 }
+#faceOval.ready {
+  border-color: #2e9e4f;
+}
 #faceGrid {
   position: absolute;
   left: 18%;

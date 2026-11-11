@@ -21,7 +21,14 @@ $.wms.login = (function() {
     var faceSelection = null;
     var faceStream = null;
     var faceWatch = null;
+    var faceCollectTimer = null;
     var faceCheckBusy = false;
+    var faceCollecting = false;
+    var faceLocked = false;
+    var faceStableCount = 0;
+    var facePreviousRaw = null;
+    var faceRetryAt = 0;
+    var faceServerMessage = "";
     var FUTRONIC_VENDOR_ID = 0x1491;
 
     var b64urlToBuf = function(value) {
@@ -59,7 +66,12 @@ $.wms.login = (function() {
             clearInterval(faceWatch);
             faceWatch = null;
         }
+        if (faceCollectTimer) {
+            clearTimeout(faceCollectTimer);
+            faceCollectTimer = null;
+        }
         faceCheckBusy = false;
+        faceCollecting = false;
     };
 
     var stopFacePreview = function() {
@@ -108,13 +120,34 @@ $.wms.login = (function() {
 
     var showFaceGuide = function(enrolled) {
         $("#faceStage,#faceGuideNote").show();
+        $("#faceGrid").removeClass("on");
+        $("#faceOval").removeClass("ready");
         if (enrolled) {
-            ensureFaceGrid().addClass("on");
-            $("#faceGuideNote").text("Fit your face inside the guide. Red marks the parts that do not match the saved Face ID.");
+            $("#faceGuideNote").text("Fit your face inside the guide. It turns green when the picture is clear enough to check.");
         } else {
-            $("#faceGrid").removeClass("on").empty();
-            $("#faceGuideNote").text("Fit your face inside the guide, then choose Save Face ID.");
+            $("#faceGrid").empty();
+            $("#faceGuideNote").text("Fit your face inside the guide. It turns green when you can save Face ID.");
         }
+    };
+
+    var setFacePrompt = function(message, ready) {
+        $("#faceHint").removeClass("hidden").text(message);
+        $("#faceOval").toggleClass("ready", !!ready);
+        var enrolled = faceSelection && factorStatus.methods && factorStatus.methods[faceSelection.method];
+        if (!enrolled) {
+            $("#btnFaceContinue").prop("disabled", !ready || faceCollecting || faceLocked);
+        }
+    };
+
+    var faceMovement = function(previous, current) {
+        if (!previous || !current || previous.length !== current.length) {
+            return 999;
+        }
+        var sum = 0;
+        for (var i = 0; i < previous.length; i++) {
+            sum += Math.abs(previous[i] - current[i]);
+        }
+        return sum / previous.length;
     };
 
     var showSfAlert = function(message) {
@@ -508,19 +541,24 @@ $.wms.login = (function() {
         }
         var enrolled = factorStatus.methods && factorStatus.methods[method];
         showFaceGuide(enrolled);
+        faceLocked = false;
+        faceStableCount = 0;
+        facePreviousRaw = null;
+        faceRetryAt = 0;
+        faceServerMessage = "";
         if (enrolled) {
             $("#btnFaceContinue").addClass("hidden");
-            $("#faceHint").removeClass("hidden").text("Look at the camera. Face ID continues automatically when your face matches.");
+            $("#faceHint").removeClass("hidden").text("Center your face in the guide.");
         } else {
-            $("#btnFaceContinue").removeClass("hidden").text("Save Face ID");
-            $("#faceHint").addClass("hidden").text("");
+            $("#btnFaceContinue").removeClass("hidden").text("Save Face ID").prop("disabled", true);
+            $("#faceHint").removeClass("hidden").text("Center your face in the guide.");
         }
         openPreview(faceSelection.deviceId);
     };
 
     var captureFaceSample = function(video) {
         if (!video || !video.videoWidth || video.readyState < 2) {
-            return null;
+            return { issue: "Center your face in the guide." };
         }
         var width = 160;
         var height = 120;
@@ -532,12 +570,14 @@ $.wms.login = (function() {
         var pixels = context.getImageData(0, 0, width, height).data;
         var skin = new Uint8Array(width * height);
         var skinCount = 0;
+        var lumaSum = 0;
         for (var y = 0; y < height; y++) {
             for (var x = 0; x < width; x++) {
                 var offset = (y * width + x) * 4;
                 var red = pixels[offset];
                 var green = pixels[offset + 1];
                 var blue = pixels[offset + 2];
+                lumaSum += red * 0.299 + green * 0.587 + blue * 0.114;
                 var cb = 128 - 0.168736 * red - 0.331264 * green + 0.5 * blue;
                 var cr = 128 + 0.5 * red - 0.418688 * green - 0.081312 * blue;
                 if (cr > 133 && cr < 173 && cb > 77 && cb < 127 && red > 60 && green > 40 && red > green && red > blue) {
@@ -546,8 +586,11 @@ $.wms.login = (function() {
                 }
             }
         }
-        if (skinCount < width * height * 0.03) {
-            return null;
+        if (skinCount < width * height * 0.008) {
+            if (lumaSum / (width * height) < 55) {
+                return { issue: "The light is too low. Face a lamp or a window." };
+            }
+            return { issue: "Center your face in the guide." };
         }
         var seen = new Uint8Array(width * height);
         var best = null;
@@ -590,16 +633,20 @@ $.wms.login = (function() {
             }
         }
         if (!best || best.area < 80) {
-            return null;
+            return { issue: "Center your face in the guide." };
         }
         var boxWidth = best.maxX - best.minX + 1;
         var boxHeight = best.maxY - best.minY + 1;
         if (boxWidth < 18 || boxHeight < 18) {
-            return null;
+            return { issue: "Move closer to the camera." };
         }
-        var size = Math.max(boxWidth, boxHeight);
         var centerX = (best.minX + best.maxX) / 2;
         var centerY = (best.minY + best.maxY) / 2;
+        var qualityIssue = faceQualityIssue(pixels, skin, width, best, boxWidth, boxHeight, centerX, centerY);
+        if (qualityIssue) {
+            return { issue: qualityIssue };
+        }
+        var size = Math.max(boxWidth, boxHeight);
         var left = Math.round(centerX - size / 2);
         var top = Math.round(centerY - size / 2);
         if (left < 0) { left = 0; }
@@ -607,6 +654,7 @@ $.wms.login = (function() {
         if (left + size > width) { left = Math.max(0, width - size); }
         if (top + size > height) { top = Math.max(0, height - size); }
         var sample = [];
+        var raw = [];
         var total = 0;
         var cells = 16;
         for (var gy = 0; gy < cells; gy++) {
@@ -615,6 +663,7 @@ $.wms.login = (function() {
                 var sy = Math.min(height - 1, Math.floor(top + (gy + 0.5) * size / cells));
                 var pixel = (sy * width + sx) * 4;
                 var gray = pixels[pixel] * 0.299 + pixels[pixel + 1] * 0.587 + pixels[pixel + 2] * 0.114;
+                raw.push(gray);
                 sample.push(gray);
                 total += gray;
             }
@@ -635,11 +684,127 @@ $.wms.login = (function() {
         for (var s = 0; s < sample.length; s++) {
             sample[s] = Math.round((sample[s] / length) * 10000) / 10000;
         }
-        return sample;
+        return { sample: sample, raw: raw, issue: null };
+    };
+
+    var faceQualityIssue = function(pixels, skin, width, best, boxWidth, boxHeight, centerX, centerY) {
+        var grayAt = function(x, y) {
+            var pixel = (y * width + x) * 4;
+            return pixels[pixel] * 0.299 + pixels[pixel + 1] * 0.587 + pixels[pixel + 2] * 0.114;
+        };
+        var midX = centerX;
+        var eyeY0 = best.minY + boxHeight * 0.18;
+        var eyeY1 = best.minY + boxHeight * 0.42;
+        var cheekY0 = best.minY + boxHeight * 0.55;
+        var cheekY1 = best.minY + boxHeight * 0.82;
+        var eyeLX0 = best.minX + boxWidth * 0.12;
+        var eyeLX1 = best.minX + boxWidth * 0.42;
+        var eyeRX0 = best.minX + boxWidth * 0.58;
+        var eyeRX1 = best.minX + boxWidth * 0.88;
+        var boxGray = 0;
+        var boxCount = 0;
+        var lapSum = 0;
+        var lapCount = 0;
+        var leftSkin = 0;
+        var rightSkin = 0;
+        var leftCount = 0;
+        var rightCount = 0;
+        var eyeLeftSkin = 0;
+        var eyeLeftCount = 0;
+        var eyeLeftGray = 0;
+        var eyeRightSkin = 0;
+        var eyeRightCount = 0;
+        var eyeRightGray = 0;
+        var cheekSkin = 0;
+        var cheekCount = 0;
+        var cheekGray = 0;
+        for (var y = best.minY; y <= best.maxY; y++) {
+            for (var x = best.minX; x <= best.maxX; x++) {
+                var gray = grayAt(x, y);
+                var isSkin = skin[y * width + x] === 1;
+                boxGray += gray;
+                boxCount++;
+                if (x < midX) {
+                    leftCount++;
+                    if (isSkin) { leftSkin++; }
+                } else {
+                    rightCount++;
+                    if (isSkin) { rightSkin++; }
+                }
+                if (y >= eyeY0 && y <= eyeY1 && x >= eyeLX0 && x <= eyeLX1) {
+                    eyeLeftCount++;
+                    eyeLeftGray += gray;
+                    if (isSkin) { eyeLeftSkin++; }
+                }
+                if (y >= eyeY0 && y <= eyeY1 && x >= eyeRX0 && x <= eyeRX1) {
+                    eyeRightCount++;
+                    eyeRightGray += gray;
+                    if (isSkin) { eyeRightSkin++; }
+                }
+                if (y >= cheekY0 && y <= cheekY1 && x >= eyeLX0 && x <= eyeRX1) {
+                    cheekCount++;
+                    cheekGray += gray;
+                    if (isSkin) { cheekSkin++; }
+                }
+                if (x > best.minX && x < best.maxX && y > best.minY && y < best.maxY) {
+                    var lap = Math.abs((4 * gray) - grayAt(x - 1, y) - grayAt(x + 1, y) - grayAt(x, y - 1) - grayAt(x, y + 1));
+                    lapSum += lap;
+                    lapCount++;
+                }
+            }
+        }
+        if (boxWidth >= 34 && boxHeight >= 40 && eyeLeftCount > 8 && eyeRightCount > 8 && cheekCount > 8) {
+            var eyeLeftRatio = eyeLeftSkin / eyeLeftCount;
+            var eyeRightRatio = eyeRightSkin / eyeRightCount;
+            var cheekRatio = cheekSkin / cheekCount;
+            var eyeLeftMean = eyeLeftGray / eyeLeftCount;
+            var eyeRightMean = eyeRightGray / eyeRightCount;
+            var cheekMean = cheekGray / cheekCount;
+            if (eyeLeftRatio < 0.75 && eyeRightRatio < 0.75 && cheekRatio > 0.45 && cheekMean - eyeLeftMean > 30 && cheekMean - eyeRightMean > 30) {
+                return "Sunglasses are covering your eyes. Remove them, or use SMS OTP or your PIN.";
+            }
+        }
+        if (boxWidth < 34 || boxHeight < 40) {
+            return "Move closer to the camera.";
+        }
+        if (boxWidth > 148 || boxHeight > 112) {
+            return "Move back from the camera.";
+        }
+        if (Math.abs(centerX - 80) > 26 || Math.abs(centerY - 56) > 22) {
+            return "Center your face in the guide.";
+        }
+        var mean = boxCount ? boxGray / boxCount : 0;
+        if (mean < 52) {
+            return "The light is too low. Face a lamp or a window.";
+        }
+        if (mean > 212) {
+            return "The light is too strong. Turn slightly away from the glare.";
+        }
+        var sharpness = lapCount ? lapSum / lapCount : 0;
+        if (sharpness < 8) {
+            return "The image is blurry. Hold still and face the camera.";
+        }
+        var leftRatio = leftCount ? leftSkin / leftCount : 0;
+        var rightRatio = rightCount ? rightSkin / rightCount : 0;
+        var balance = leftRatio / (rightRatio || 0.001);
+        if (leftRatio + rightRatio > 0.3 && (balance < 0.45 || balance > 2.2)) {
+            return "Turn your face toward the camera.";
+        }
+        return null;
+    };
+
+    var faceIsEnrolled = function() {
+        return !!(faceSelection && factorStatus.methods && factorStatus.methods[faceSelection.method]);
+    };
+
+    var pauseFaceForLock = function(message) {
+        faceLocked = true;
+        stopFacePreview();
+        $("#faceHint").removeClass("hidden").text(message || "Face ID is paused after 5 tries. Use SMS OTP or your PIN.");
     };
 
     var submitMatchedFace = function(sample) {
-        if (!faceSelection || !pendingLogin || faceCheckBusy) {
+        if (!faceSelection || !pendingLogin || faceCheckBusy || faceLocked || !faceIsEnrolled()) {
             return;
         }
         faceCheckBusy = true;
@@ -656,43 +821,147 @@ $.wms.login = (function() {
                 return;
             }
             faceCheckBusy = false;
+            if (result.status === 'ERROR') {
+                setFacePrompt("The face check could not be sent. Try again, or use SMS OTP or your PIN.", false);
+                return;
+            }
+            if (result.locked) {
+                pauseFaceForLock(result.message);
+                return;
+            }
+            faceStableCount = 0;
+            faceRetryAt = Date.now() + 1600;
+            faceServerMessage = result.message || "Face did not match. Adjust your position in the guide, or use SMS OTP or your PIN.";
             if (result.mismatch) {
                 paintFaceMismatch(result.mismatch);
             }
-            $("#faceHint").removeClass("hidden").text(result.message || "Red areas differ from the saved Face ID. Adjust your face inside the guide.");
+            $("#faceOval").removeClass("ready");
+            $("#faceHint").removeClass("hidden").text(faceServerMessage);
         });
     };
 
-    var watchForMatchingFace = function() {
-        stopFaceWatch();
-        faceWatch = setInterval(function() {
-            if (faceCheckBusy || !faceSelection) {
+    var submitEnrollment = function(samples) {
+        $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/faceRegister', JSON.stringify({
+            TOKEN: pendingLogin.payload.SECOND_FACTOR_TOKEN,
+            METHOD: faceSelection.method,
+            EMBEDDING: samples,
+            DEVICE_LABEL: faceSelection.label || ''
+        })).done(function(result) {
+            faceCollecting = false;
+            if (result.status === 'SUCCESS') {
+                stopFacePreview();
+                factorStatus.methods[faceSelection.method] = true;
+                finishSession(pendingLogin, "#divSfSuccess");
                 return;
             }
-            if (!(factorStatus.methods && factorStatus.methods[faceSelection.method])) {
+            faceStableCount = 0;
+            if (result.status === 'ERROR') {
+                setFacePrompt("Face ID could not be saved. Try again, or use SMS OTP or your PIN.", false);
+            } else {
+                setFacePrompt(result.message || "Face ID was not saved. Hold still and try again.", false);
+            }
+            startFaceGuide();
+        });
+    };
+
+    var collectFaceSamples = function() {
+        var samples = [];
+        var previous = null;
+        faceCollecting = true;
+        $("#btnFaceContinue").prop("disabled", true);
+        var take = function() {
+            if (faceLocked || !faceSelection) {
+                faceCollecting = false;
                 return;
             }
-            var sample = captureFaceSample(document.getElementById('facePreview'));
-            if (!sample) {
-                paintFaceMismatch([]);
-                $("#faceHint").removeClass("hidden").text("Move your face into the guide.");
+            var reading = captureFaceSample(document.getElementById('facePreview'));
+            if (!reading || reading.issue || !reading.sample) {
+                faceCollecting = false;
+                faceStableCount = 0;
+                setFacePrompt(reading && reading.issue ? reading.issue : "Center your face in the guide.", false);
+                startFaceGuide();
                 return;
             }
-            submitMatchedFace(sample);
-        }, 900);
+            if (previous && faceMovement(previous, reading.raw) > 16) {
+                faceCollecting = false;
+                faceStableCount = 0;
+                setFacePrompt("Hold still.", false);
+                startFaceGuide();
+                return;
+            }
+            previous = reading.raw;
+            samples.push(reading.sample);
+            if (samples.length >= 3) {
+                setFacePrompt("Checking the three samples.", true);
+                submitEnrollment(samples);
+                return;
+            }
+            setFacePrompt("Saved sample " + samples.length + " of 3. Hold still.", true);
+            faceCollectTimer = setTimeout(take, 700);
+        };
+        take();
+    };
+
+    var tickFaceGuide = function() {
+        if (faceCollecting || faceCheckBusy || faceLocked || !faceSelection) {
+            return;
+        }
+        if (Date.now() < faceRetryAt) {
+            $("#faceOval").removeClass("ready");
+            $("#faceHint").removeClass("hidden").text(faceServerMessage);
+            return;
+        }
+        var reading = captureFaceSample(document.getElementById('facePreview'));
+        if (!reading || reading.issue || !reading.sample) {
+            faceStableCount = 0;
+            facePreviousRaw = null;
+            $("#faceGrid").removeClass("on");
+            setFacePrompt(reading && reading.issue ? reading.issue : "Center your face in the guide.", false);
+            return;
+        }
+        if (facePreviousRaw && faceMovement(facePreviousRaw, reading.raw) > 16) {
+            faceStableCount = 0;
+            facePreviousRaw = reading.raw;
+            setFacePrompt("Hold still.", false);
+            return;
+        }
+        facePreviousRaw = reading.raw;
+        faceStableCount++;
+        if (faceStableCount < 2) {
+            setFacePrompt("Hold still.", false);
+            return;
+        }
+        if (faceIsEnrolled()) {
+            setFacePrompt("Hold still. Checking your face.", true);
+            submitMatchedFace(reading.sample);
+            return;
+        }
+        setFacePrompt("Ready. Choose Save Face ID and hold still.", true);
+    };
+
+    var startFaceGuide = function() {
+        if (faceWatch) {
+            clearInterval(faceWatch);
+            faceWatch = null;
+        }
+        if (faceLocked) {
+            setFacePrompt("Face ID is paused after 5 tries. Use SMS OTP or your PIN.", false);
+            return;
+        }
+        faceWatch = setInterval(tickFaceGuide, 400);
     };
 
     var openPreview = function(deviceId) {
         stopFacePreview();
+        faceStableCount = 0;
+        facePreviousRaw = null;
         var constraints = { video: deviceId ? { deviceId: { exact: deviceId } } : true, audio: false };
         navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
             faceStream = stream;
             var video = document.getElementById('facePreview');
             video.srcObject = stream;
-            showFaceGuide(faceSelection && factorStatus.methods && factorStatus.methods[faceSelection.method]);
-            if (faceSelection && factorStatus.methods && factorStatus.methods[faceSelection.method]) {
-                watchForMatchingFace();
-            }
+            showFaceGuide(faceIsEnrolled());
+            startFaceGuide();
         }).catch(function() {
             showSfAlert("That camera could not be opened. Pick another one or use SMS OTP.");
         });
@@ -770,35 +1039,13 @@ $.wms.login = (function() {
             openPreview(faceSelection.deviceId);
         });
         $("#btnFaceContinue").on("click", function(){
-            if (!faceSelection || !pendingLogin) {
+            if (!faceSelection || !pendingLogin || faceCollecting || faceLocked || faceIsEnrolled()) {
                 return;
             }
-            var sample = captureFaceSample(document.getElementById('facePreview'));
-            if (!sample) {
-                $("#faceHint").removeClass("hidden").text("No face was found. Look straight at the selected camera, then confirm again.");
+            if ($(this).prop("disabled")) {
                 return;
             }
-            var enrolled = factorStatus.methods && factorStatus.methods[faceSelection.method];
-            var path = enrolled ? '/ppa-api-uams/wsv1/api/faceVerify' : '/ppa-api-uams/wsv1/api/faceRegister';
-            $("#btnFaceContinue").prop("disabled", true);
-            $.wms.executeExternalPost(path, JSON.stringify({
-                TOKEN: pendingLogin.payload.SECOND_FACTOR_TOKEN,
-                METHOD: faceSelection.method,
-                EMBEDDING: sample,
-                DEVICE_LABEL: faceSelection.label || ''
-            })).done(function(result) {
-                $("#btnFaceContinue").prop("disabled", false);
-                if (result.status === 'SUCCESS') {
-                    stopFacePreview();
-                    factorStatus.methods[faceSelection.method] = true;
-                    finishSession(pendingLogin, "#divSfSuccess");
-                } else {
-                    if (result.mismatch) {
-                        paintFaceMismatch(result.mismatch);
-                    }
-                    $("#faceHint").removeClass("hidden").text((result.message || 'Face ID did not match.') + ' Stay on this camera and try again, or use SMS OTP.');
-                }
-            });
+            collectFaceSamples();
         });
         $("#btnSfPin").on("click", openPin);
         $("#btnPinChangeShow").on("click", function(){
