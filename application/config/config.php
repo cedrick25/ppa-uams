@@ -35,6 +35,7 @@ $__public_hosts = array(
 	'localhost',
 	'127.0.0.1',
 	'ks',
+	'uams.lan',
 );
 $__allow_by_host = in_array($__req_host, $__public_hosts, TRUE)
 	|| (substr($__req_host, -strlen('.probation.gov.ph')) === '.probation.gov.ph');

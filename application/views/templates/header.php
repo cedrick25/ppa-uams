@@ -4,7 +4,21 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 <html lang="en">
 <head>
 	<meta charset="utf-8">
+	<?php if (app_is_https_request()): ?>
 	<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+	<?php else: ?>
+	<script>
+	(function () {
+		if (window.isSecureContext) {
+			return;
+		}
+		var next = "https://uams.lan" + window.location.pathname + window.location.search + window.location.hash;
+		fetch(next, { method: "GET", mode: "no-cors", cache: "no-store", credentials: "include" }).then(function () {
+			window.location.replace(next);
+		}).catch(function () {});
+	})();
+	</script>
+	<?php endif; ?>
 	<title>UAMS - Parole and Probation Administration</title>
 	<link rel="icon" href="<?php echo BASE_URL(); ?>assets/img/favicon-main-ppa.png">
 
