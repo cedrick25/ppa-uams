@@ -22,14 +22,137 @@
   max-width: calc(100vw - 24px);
   margin: 0;
 }
+#sfModal .modal-content {
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+#sfModal .modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+}
+#sfModal .modal-title {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #111827;
+}
 #sfModal .modal-body {
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  padding: 16px 24px 24px;
 }
-#sfModal .modal-body > div > div:not([class]):not([id]) {
-  height: 8px;
-  line-height: 8px;
-  overflow: hidden;
+#divSecondFactor,
+#divSfFingerprint,
+#divSfFutronic,
+#divSfFace,
+#divSfPin,
+#divLoginOTP,
+#pinEnter,
+#pinSetup,
+#pinChange {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#sfModal .sf-kicker {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: #111827;
+}
+#sfModal .sf-note,
+#sfModal #futronicLead,
+#sfModal #futronicStep1,
+#sfModal #futronicStep2,
+#sfModal #fpHint,
+#sfModal #sfDeviceNote,
+#sfModal #faceGuideNote {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #4b5565;
+}
+#sfModal .sf-note:empty,
+#sfModal #fpHint:empty,
+#sfModal #sfDeviceNote:empty,
+#sfModal #faceHint:empty {
+  display: none;
+}
+#sfModal strong {
+  font-weight: 500;
+}
+#sfModal .btn-block {
+  text-align: left;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+#sfModal .btn {
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: none;
+  transition: background-color 160ms cubic-bezier(0.22, 1, 0.36, 1), border-color 160ms cubic-bezier(0.22, 1, 0.36, 1), color 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+#sfModal .btn:focus {
+  outline: 2px solid #255b89;
+  outline-offset: 2px;
+}
+#sfModal .btn-primary {
+  background: #255b89;
+  border-color: #255b89;
+  color: #fff;
+}
+#sfModal .btn-primary:hover,
+#sfModal .btn-primary:focus {
+  background: #1d4b73;
+  border-color: #1d4b73;
+  color: #fff;
+}
+#sfModal .sf-choice,
+#sfModal .btn-default {
+  background: #fff;
+  color: #111827;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  text-align: left;
+}
+#sfModal .sf-choice:hover:not(:disabled),
+#sfModal .btn-default:hover {
+  background: #eceff4;
+  color: #111827;
+}
+#sfModal .sf-choice:disabled {
+  opacity: 0.45;
+}
+#sfModal .btn-link {
+  min-height: 32px;
+  padding: 4px 0;
+  color: #255b89;
+  text-align: left;
+  border: 0;
+  background: transparent;
+}
+#sfModal .alert {
+  margin: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+#sfModal .form-control {
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 15px;
+  box-shadow: none;
+}
+#sfModal .input-group-addon {
+  border-radius: 8px 0 0 8px;
+  background: #f5f7fa;
+  color: #4b5565;
+  border-color: rgba(17, 24, 39, 0.1);
 }
 #faceStage {
   position: relative;
@@ -79,6 +202,61 @@
 }
 #faceGrid span.mismatch {
   background: rgba(214, 40, 40, 0.72);
+}
+#futronicVisual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 8px 0 12px;
+  color: #111827;
+}
+#futronicVisual .fp-icon {
+  width: 72px;
+  height: 72px;
+  color: #6b7487;
+}
+#futronicVisual[data-phase="waiting"] .fp-icon,
+#futronicVisual[data-phase="place"] .fp-icon,
+#futronicVisual[data-phase="place-again"] .fp-icon,
+#futronicVisual[data-phase="match"] .fp-icon {
+  color: #255b89;
+}
+#futronicVisual[data-phase="lift"] .fp-icon { color: #9a6b12; }
+#futronicVisual[data-phase="done"] .fp-icon { color: #16a34a; }
+#futronicVisual[data-phase="error"] .fp-icon { color: #dc2626; }
+#futronicVisualCaption {
+  margin: 8px 0 0;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 500;
+  text-align: center;
+  color: #111827;
+}
+#futronicScanCount {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 16px;
+  text-align: center;
+  color: #6b7487;
+  font-variant-numeric: tabular-nums;
+}
+#futronicStatus {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #4b5565;
+}
+#futronicStatus.alert-danger { color: #dc2626; }
+#futronicStatus.alert-success { color: #16a34a; }
+@media (max-width: 480px) {
+  #sfModal .modal-body { padding: 16px; }
+  #futronicVisual { padding: 12px; }
+  #futronicVisualCaption { font-size: 18px; }
 }
 </style>
 
@@ -164,44 +342,60 @@
 									<div id="divSecondFactor" class="hidden">
 										<div class="alert alert-success hidden" role="alert" id="divSfSuccess">
 										  <i class="fa fa-check"></i>
-										  Verified. Redirecting to dashboard...
+										  Verified. Redirecting to the dashboard
 										</div>
 										<div class="alert alert-warning hidden" role="alert" id="divSfSecure">
-										  Fingerprint and Face ID require a secure page (HTTPS, or localhost). PIN and SMS OTP stay available.
+										  Built-in fingerprint and Face ID require a secure page (HTTPS, or localhost). Futronic FS64, PIN, and SMS OTP stay available.
 										</div>
-										<p class="font_18" style="font-weight:bold;">Choose a second authentication method</p>
-										<p class="text-muted" id="sfDeviceNote"></p>
-										<button type="button" id="btnSfFingerprint" class="btn btn-primary btn-block font_20" disabled>Fingerprint</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnSfFace" class="btn btn-primary btn-block font_20" disabled>Face ID</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnSfPin" class="btn btn-primary btn-block font_20">PIN Code</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnSfSms" class="btn btn-default btn-block font_20">SMS OTP</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnSfCheckFutronic" class="btn btn-link">Check for Futronic FS64</button>
+										<p class="sf-kicker">Choose a second authentication method</p>
+										<p class="sf-note" id="sfDeviceNote"></p>
+										<button type="button" id="btnSfFingerprint" class="btn btn-block sf-choice" disabled>Fingerprint</button>
+										<button type="button" id="btnSfFace" class="btn btn-block sf-choice" disabled>Face ID</button>
+										<button type="button" id="btnSfPin" class="btn btn-block sf-choice">PIN</button>
+										<button type="button" id="btnSfSms" class="btn btn-block sf-choice">SMS OTP</button>
+										<button type="button" id="btnSfCheckFutronic" class="btn btn-link">Connect Futronic FS64</button>
 									</div>
 
 									<div id="divSfFingerprint" class="hidden">
-										<p class="font_18" style="font-weight:bold;">Choose a fingerprint scanner</p>
-										<p class="text-muted" id="fpHint"></p>
-										<button type="button" id="btnFpBuiltin" class="btn btn-primary btn-block font_20" disabled>Built-in fingerprint scanner</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnFpFutronic" class="btn btn-primary btn-block font_20" disabled>Futronic FS64</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnFpBack" class="btn btn-default btn-block font_20">Back</button>
-										<div>&nbsp;</div>
+										<p class="sf-kicker">Choose a fingerprint scanner</p>
+										<p class="sf-note" id="fpHint"></p>
+										<button type="button" id="btnFpBuiltin" class="btn btn-block sf-choice" disabled>Built-in fingerprint scanner</button>
+										<button type="button" id="btnFpFutronic" class="btn btn-block sf-choice" disabled>Futronic FS64</button>
+										<button type="button" id="btnFpBack" class="btn btn-default btn-block">Back</button>
 										<button type="button" id="btnFpSms" class="btn btn-link">Use SMS OTP instead</button>
 									</div>
 
+									<div id="divSfFutronic" class="hidden">
+										<p class="sf-kicker" id="futronicTitle">Register your fingerprint</p>
+										<p class="sf-note" id="futronicLead">Registration uses two scans of the same finger. A fingerprint saved in Windows Hello is not used.</p>
+						<div id="futronicVisual" data-phase="idle" data-purpose="enroll">
+							<svg class="fp-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+								<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+									<path d="M32 44.5c0-5.2 3.4-7.6 3.4-12.4a3.4 3.4 0 0 0-6.8 0"/>
+									<path d="M23.2 43.2c.3-6.4 2.8-10.2 8.8-13.6 6 3.4 8.5 7.2 8.8 13.6"/>
+									<path d="M17.6 40.4c.8-9.2 4.8-15.6 14.4-19.8 9.6 4.2 13.6 10.6 14.4 19.8"/>
+									<path d="M13 36.2c1.4-12 6.6-20.4 19-25 12.4 4.6 17.6 13 19 25"/>
+									<path d="M32 44.8v5.2"/>
+									<path d="M24.4 48.6c1.1 3 3.8 5 7.6 5s6.5-2 7.6-5"/>
+								</g>
+							</svg>
+							<p id="futronicVisualCaption">Ready to register</p>
+							<p id="futronicScanCount" class="hidden"></p>
+						</div>
+						<p id="futronicLive" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+										<p id="futronicStep1"><strong>1.</strong> When the picture says place and the light is on, put one finger flat on the glass and hold still.</p>
+										<p id="futronicStep2"><strong>2.</strong> When it says lift, take that finger off. Then place the same finger again when the light comes back on.</p>
+										<div class="alert alert-info" id="futronicStatus" aria-live="off">Press Save fingerprint. Keep your finger off the glass until the picture says to place it.</div>
+										<button type="button" id="btnFutronicStart" class="btn btn-primary btn-block">Save fingerprint</button>
+										<button type="button" id="btnFutronicBack" class="btn btn-default btn-block">Back</button>
+										<button type="button" id="btnFutronicSms" class="btn btn-link">Use SMS OTP instead</button>
+									</div>
+
 									<div id="divSfFace" class="hidden">
-										<p class="text-muted hidden" id="faceHint"></p>
-										<button type="button" id="btnFaceBuiltin" class="btn btn-primary btn-block font_20" disabled>Built-in camera</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnFaceWebcam" class="btn btn-primary btn-block font_20" disabled>Third-party webcam</button>
-										<div>&nbsp;</div>
-										<select id="selFaceCamera" class="form-control font_18 hidden"></select>
-										<div>&nbsp;</div>
+										<p class="sf-note hidden" id="faceHint"></p>
+										<button type="button" id="btnFaceBuiltin" class="btn btn-block sf-choice" disabled>Built-in camera</button>
+										<button type="button" id="btnFaceWebcam" class="btn btn-block sf-choice" disabled>Third-party webcam</button>
+										<select id="selFaceCamera" class="form-control hidden"></select>
 										<div id="faceStage">
 											<video id="facePreview" autoplay playsinline muted></video>
 											<div id="faceGuide">
@@ -209,61 +403,49 @@
 												<div id="faceGrid"></div>
 											</div>
 										</div>
-										<p class="text-muted" id="faceGuideNote" style="display:none;"></p>
-										<div>&nbsp;</div>
-										<button type="button" id="btnFaceContinue" class="btn btn-primary btn-block font_20 hidden">Confirm Face ID</button>
-										<div>&nbsp;</div>
-										<button type="button" id="btnFaceBack" class="btn btn-default btn-block font_20">Back</button>
-										<div>&nbsp;</div>
+										<p class="sf-note" id="faceGuideNote" style="display:none;"></p>
+										<button type="button" id="btnFaceContinue" class="btn btn-primary btn-block hidden">Confirm Face ID</button>
+										<button type="button" id="btnFaceBack" class="btn btn-default btn-block">Back</button>
 										<button type="button" id="btnFaceSms" class="btn btn-link">Use SMS OTP instead</button>
 									</div>
 
 									<div id="divSfPin" class="hidden">
-										<div class="alert alert-info" role="alert" id="divPinInfo">Enter your PIN code.</div>
+										<div class="alert alert-info" role="alert" id="divPinInfo">Enter your PIN</div>
 										<div id="pinEnter">
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPin" type="password" inputmode="numeric" maxlength="8" class="form-control font_18" placeholder="PIN code" autocomplete="off">
+												<input id="txtPin" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="PIN" autocomplete="off">
 											</div>
-											<div>&nbsp;</div>
-											<button type="button" id="btnPinSubmit" class="btn btn-primary btn-block font_20">Submit PIN</button>
-											<div>&nbsp;</div>
-											<button type="button" id="btnPinChangeShow" class="btn btn-default btn-block font_20">Change PIN</button>
+											<button type="button" id="btnPinSubmit" class="btn btn-primary btn-block">Submit PIN</button>
+											<button type="button" id="btnPinChangeShow" class="btn btn-default btn-block">Change PIN</button>
 										</div>
 										<div id="pinSetup" class="hidden">
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinNew" type="password" inputmode="numeric" maxlength="8" class="form-control font_18" placeholder="New PIN (4 to 8 digits)" autocomplete="off">
+												<input id="txtPinNew" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="New PIN, 4 to 8 digits" autocomplete="off">
 											</div>
-											<div>&nbsp;</div>
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinConfirm" type="password" inputmode="numeric" maxlength="8" class="form-control font_18" placeholder="Confirm PIN" autocomplete="off">
+												<input id="txtPinConfirm" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="Confirm PIN" autocomplete="off">
 											</div>
-											<div>&nbsp;</div>
-											<button type="button" id="btnPinSave" class="btn btn-primary btn-block font_20">Save PIN and continue</button>
+											<button type="button" id="btnPinSave" class="btn btn-primary btn-block">Save PIN and continue</button>
 										</div>
 										<div id="pinChange" class="hidden">
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinCurrent" type="password" inputmode="numeric" maxlength="8" class="form-control font_18" placeholder="Current PIN" autocomplete="off">
+												<input id="txtPinCurrent" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="Current PIN" autocomplete="off">
 											</div>
-											<div>&nbsp;</div>
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinChangeNew" type="password" inputmode="numeric" maxlength="8" class="form-control font_18" placeholder="New PIN (4 to 8 digits)" autocomplete="off">
+												<input id="txtPinChangeNew" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="New PIN, 4 to 8 digits" autocomplete="off">
 											</div>
-											<div>&nbsp;</div>
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinChangeConfirm" type="password" inputmode="numeric" maxlength="8" class="form-control font_18" placeholder="Confirm new PIN" autocomplete="off">
+												<input id="txtPinChangeConfirm" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="Confirm new PIN" autocomplete="off">
 											</div>
-											<div>&nbsp;</div>
-											<button type="button" id="btnPinUpdate" class="btn btn-primary btn-block font_20">Update PIN</button>
+											<button type="button" id="btnPinUpdate" class="btn btn-primary btn-block">Update PIN</button>
 										</div>
-										<div>&nbsp;</div>
-										<button type="button" id="btnPinBack" class="btn btn-default btn-block font_20">Back</button>
-										<div>&nbsp;</div>
+										<button type="button" id="btnPinBack" class="btn btn-default btn-block">Back</button>
 										<button type="button" id="btnPinSms" class="btn btn-link">Use SMS OTP instead</button>
 									</div>
 
@@ -274,33 +456,26 @@
 										<div class="alert alert-danger hidden" role="alert" id="divInactive">
 										  <i class="fa fa-exclamation-triangle"></i>
 										  <span class="sr-only">Error:</span>
-										  User is currently inactive. Please contact System Administrator!
+										  This account is inactive. Contact the system administrator.
 										</div>
 
 										<div class="alert alert-success hidden" role="alert" id="divOtpSuccess">
 										  <i class="fa fa-check"></i>
-										  OTP verified Success! Redirecting to dashboard...
+										  OTP verified. Redirecting to the dashboard
 										</div>
 
-										<div class="alert alert-info " role="alert" id="divOtpEnter">
+										<div class="alert alert-info" role="alert" id="divOtpEnter">
 										  <i class="fa fa-info"></i>
-										  One Time PIN (OTP) key has been sent to your Contact Number. The key will be expire in 5 Minutes.
+										  A one-time PIN was sent to your contact number. It expires in 5 minutes.
 										</div>
-										
 
 										<div class="input-group">
-											<span class="input-group-addon" ><i class="fa fa-key"></i></span>
-											<input id="txtLoginOtp" type="text" class="form-control font_18" placeholder="One Time PIN">
+											<span class="input-group-addon"><i class="fa fa-key"></i></span>
+											<input id="txtLoginOtp" type="text" class="form-control" placeholder="One-time PIN" autocomplete="one-time-code">
 										</div>
 
-										<div>&nbsp;</div>
-
-										<div>
-											<button id="btnResendOtp" class="hidden btn btn-success btn-block pull-right font_20">Resend OTP</button>
-											<button id="btnLoginOtp" class="btn btn-primary btn-block pull-right font_20">Submit OTP</button>
-
-											
-										</div>
+										<button id="btnLoginOtp" class="btn btn-primary btn-block">Submit OTP</button>
+										<button id="btnResendOtp" class="hidden btn btn-default btn-block">Resend OTP</button>
 									</div>
 			</div>
 		</div>

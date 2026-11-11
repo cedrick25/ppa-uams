@@ -4,25 +4,26 @@ After a correct username and password, the sign-in screen asks for a second fact
 
 Level 1 accounts still go straight to the dashboard after the password, the same as before.
 
-Fingerprint uses the browser WebAuthn API (`navigator.credentials.create` to enroll, `navigator.credentials.get` to sign in). The server stores the public key and checks the signed challenge. The private key stays on the device.
+Built-in fingerprint uses the browser WebAuthn API (`navigator.credentials.create` to enroll, `navigator.credentials.get` to sign in). The server stores the public key and checks the signed challenge. The private key stays on the device. The Futronic FS64 does not use WebAuthn. A helper on the scanner PC captures the finger, and the API stores that template.
 
 Face ID uses only the camera you pick. Confirming the face on that camera finishes sign-in. It does not open Windows Hello and it does not ask for a fingerprint.
 
 ## What the browser can and cannot see
 
 - **Built-in fingerprint.** Enabled when `PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()` is true. That means Windows Hello, Touch ID, or another platform authenticator is ready. If it is false, the built-in scanner choice stays disabled.
-- **Futronic FS64.** Enabled when the browser can see a USB device with Futronic vendor id `0x1491` (the FS64 and other Futronic scanners). Browsers do not list USB devices until the user allows access, so **Check for Futronic FS64** opens the browser device picker. If the scanner is not plugged in, that choice stays disabled.
+- **Futronic FS64.** Enabled when `http://127.0.0.1:17364/health` reports the scanner is open. **Connect Futronic FS64** starts the installed helper, then asks it again. It does not open a USB device picker. The page does not need to be HTTPS for this scanner. The browser asks once for permission to open the helper. After that, the person at the scanner does not start the program by hand. The helper closes after a successful sign-in, when they leave the Futronic step, when they switch to SMS OTP, and after 90 seconds with no scan.
 - **Built-in camera and third-party webcam.** After camera permission, the page lists `videoinput` devices. Labels such as Integrated, Built-in, FaceTime, TrueVision, or IR Camera are treated as the built-in camera. Other cameras are treated as third-party webcams. A missing group is disabled. If no camera exists, Face ID is disabled.
 - **PIN.** A 4 to 8 digit PIN stored as a hash. It can be created on first use and changed from the PIN screen before sign-in finishes.
 - **SMS OTP.** Always shown. It is sent only after this method is chosen, to the contact number already on the account. Nothing is sent to email at login.
 
-WebAuthn is used for fingerprint only. Windows Hello matches the fingerprint. Face ID never calls WebAuthn, so choosing Face ID does not bring up a fingerprint prompt. The page turns Face ID on only when a camera is present, then matches the face on the camera you selected.
+WebAuthn is used for the built-in fingerprint only. Windows Hello matches that fingerprint. The FS64 match is done by the Futronic SDK on the scanner PC. Face ID never calls WebAuthn, so choosing Face ID does not bring up a fingerprint prompt. The page turns Face ID on only when a camera is present, then matches the face on the camera you selected.
 
 ## Requirements
 
-1. Use Chrome or Edge. Fingerprint (WebAuthn) and the camera both need a secure page: `https://` or `http://localhost`. A plain `http://192.168.x.x` address will disable fingerprint and Face ID. PIN and SMS still work there.
-2. PHP OpenSSL on the API (`ppa-api-uams`) so fingerprint signature checks run.
-3. The API creates these tables in `ppa_sso` on the first successful password check: `USER_2FA_SESSION`, `USER_PIN`, `USER_FACE`, `USER_WEBAUTHN`, `USER_WEBAUTHN_CHALLENGE`.
+1. Use Chrome or Edge. Built-in fingerprint (WebAuthn) and the camera both need a secure page: `https://` or `http://localhost`. A plain `http://192.168.x.x` address disables those two. Futronic FS64, PIN, and SMS still work there.
+2. PHP OpenSSL on the API (`ppa-api-uams`) so fingerprint signature checks and FS64 template encryption run.
+3. The API creates these tables in `ppa_sso` on the first successful password check: `USER_2FA_SESSION`, `USER_PIN`, `USER_FACE`, `USER_WEBAUTHN`, `USER_WEBAUTHN_CHALLENGE`, `USER_FUTRONIC`.
+4. For the FS64, run **Futronic Setup** once on the PC that has the scanner. That installs the helper and registers the `ppa-futronic:` link the login page uses to start it. Set the same `HmacSecret` in `appsettings.json` and `hmac_secret` in `ppa-api-uams/application/config/futronic.php` before building that setup file. The installed copy uses the secret from that build.
 
 ## Built-in fingerprint
 
@@ -36,14 +37,21 @@ The browser never receives the fingerprint image. Windows Hello is what decides 
 
 ## Futronic FS64
 
-1. Install the Futronic FS64 driver from Futronic. For WebAuthn, also install the Windows Biometric Framework / Windows Hello driver for that scanner if Futronic provides one, then enroll a finger under **Settings > Accounts > Sign-in options > Fingerprint**.
-2. Plug in the FS64.
-3. On the second-factor screen, choose **Check for Futronic FS64** and allow the Futronic device in the browser prompt.
-4. Choose **Fingerprint**, then **Futronic FS64**, and complete the Windows Hello prompt.
+A fingerprint already saved in Windows Hello cannot be used on the FS64. Windows does not give that template to the browser or to the Futronic SDK, and Futronic’s Windows Hello driver covers the FS80 and FS88, not the FS64. Each person enrolls one new finger on the FS64 the first time they choose it. Later sign-ins match that scan to the stored template. The built-in choice still uses the Hello fingerprint.
 
-If another fingerprint reader is also enrolled in Windows Hello, Windows may offer that reader. Keep the FS64 as the fingerprint sign-in method you want the prompt to use.
+1. Install the Futronic FS64 USB driver. Copy `ftrScanAPI.dll` into `ppa-uams/tools/futronic-agent` or next to the built helper, or set `SdkDirectory` in `appsettings.json` to the folder that contains it. The public FS64 package is 32-bit. Fingerprint matching also needs Futronic's ANSI template library (`ftrAnsiSDK.dll`); the public scan demo does not include it.
+2. Put the same signing secret in `tools/futronic-agent/appsettings.json` (`HmacSecret`) and `ppa-api-uams/application/config/futronic.php` (`hmac_secret`). Leave `template_key` only on the API. Change both secrets from the defaults before relying on this outside a trusted workstation.
+3. On the scanner PC, run **Futronic Setup** once (`FutronicSetup.exe` on the desktop of a machine where it was built, or the published file from `tools/futronic-setup`). It copies the helper to `%LOCALAPPDATA%\PPA\FutronicAgent`, registers the `ppa-futronic:` protocol for the current Windows user, and lists **Futronic Scanner Helper** in Settings, Apps, Installed apps. The helper listens only on `http://127.0.0.1:17364` and runs with no window. The website cannot download that folder. A second start while it is already running does nothing.
+4. Plug in the FS64. On the second-factor screen, choose **Connect Futronic FS64**. The page opens `ppa-futronic://start`. Edge or Chrome asks the first time whether to open the helper. Choose to allow it, and allow it for this site if the browser offers that. The Futronic button enables only when `/health` says the scanner is open.
+5. Choose **Fingerprint**, then **Futronic FS64**. The picture of the hand and scanner follows the helper phase. It stays on “ready” or “starting,” with the light off, until the helper is actually capturing. The first time, place the finger when the picture says place and the light is on, lift it when the picture says lift, then place the same finger again. The helper keeps the template only when those two scans match, then the API stores it encrypted. The next sign-in asks for that same finger and shows checking, then success or an error, from the helper phase. When sign-in finishes, when they leave this step, or when they switch to SMS OTP, the page tells the helper to exit. If the page is closed without that, the helper exits after 90 seconds with nothing to do.
 
-The USB check only confirms the Futronic device is attached. Windows Hello still performs the match.
+For a managed fleet, the Edge policy `AutoLaunchProtocolsFromOrigins` can allow `ppa-futronic` from the UAMS origin so the browser does not ask. Re-run **Futronic Setup** after the signing secret changes so the installed helper gets the new `appsettings.json`.
+
+Developers can still start it from `tools/futronic-agent` with `dotnet run` while changing the helper. That copy is separate from the installed one. Stop the installed helper first if port 17364 is already taken.
+
+Five failed FS64 matches during one sign-in pause this method and ask for SMS OTP or a PIN. The password session stays open until a method succeeds. Images are discarded on the scanner PC. The API stores the template, not the picture.
+
+Do not grant the page USB access to the FS64. That would take the device away from the Futronic driver the helper uses.
 
 ## Face ID
 
@@ -67,4 +75,7 @@ Use the same camera you enrolled. Before relying on it, try that laptop in norma
 - Login screen: `ppa-uams/application/views/login.php`
 - Login script: `ppa-uams/assets/js/wms-login.js`
 - API: `ppa-api-uams/application/controllers/wsv1/Api.php` and `application/models/API_model.php`
+- FS64 signing and template key: `ppa-api-uams/application/config/futronic.php`
+- FS64 helper: `ppa-uams/tools/futronic-agent`
+- One-time installer: `ppa-uams/tools/futronic-setup` (`FutronicSetup.exe`)
 - WebAuthn checks: `ppa-api-uams/application/libraries/Webauthn_rp.php`

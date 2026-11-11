@@ -29,7 +29,17 @@ $.wms.login = (function() {
     var facePreviousRaw = null;
     var faceRetryAt = 0;
     var faceServerMessage = "";
-    var FUTRONIC_VENDOR_ID = 0x1491;
+    var FUTRONIC_AGENT = "http://127.0.0.1:17364";
+    var FUTRONIC_PROTOCOL = "ppa-futronic://start";
+    var futronicBusy = false;
+    var futronicPoll = null;
+    var futronicPurpose = "enroll";
+    var futronicAnnouncement = "";
+    var futronicAnnounceTimer = null;
+    var futronicCaptureSeen = null;
+    var futronicCaptureActive = null;
+    var futronicCaptureArmed = false;
+    var futronicUseCaptureGeneration = false;
 
     var b64urlToBuf = function(value) {
         var text = String(value).replace(/-/g, '+').replace(/_/g, '/');
@@ -155,7 +165,7 @@ $.wms.login = (function() {
     };
 
     var hideSfPanels = function() {
-        $("#divSecondFactor,#divSfFingerprint,#divSfFace,#divSfPin,#divLoginOTP").addClass("hidden");
+        $("#divSecondFactor,#divSfFingerprint,#divSfFutronic,#divSfFace,#divSfPin,#divLoginOTP").addClass("hidden");
     };
 
     var openSecondFactorModal = function() {
@@ -167,6 +177,7 @@ $.wms.login = (function() {
 
     var showFactorHome = function() {
         stopFacePreview();
+        stopFutronicPoll();
         hideSfPanels();
         $("#divSecondFactor").removeClass("hidden");
         applyDeviceState();
@@ -174,26 +185,29 @@ $.wms.login = (function() {
     };
 
     var applyDeviceState = function() {
-        var fingerprintAvailable = devices.platform || devices.futronic;
-        $("#btnSfFingerprint").prop("disabled", !devices.secure || !fingerprintAvailable);
+        var builtinOk = devices.secure && devices.platform;
+        var futronicOk = devices.futronic === true;
+        $("#btnSfFingerprint").prop("disabled", !builtinOk && !futronicOk);
         var facePossible = devices.secure && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && !devices.noCamera;
         $("#btnSfFace").prop("disabled", !facePossible);
-        $("#btnFpBuiltin").prop("disabled", !devices.platform);
-        $("#btnFpFutronic").prop("disabled", !devices.futronic);
+        $("#btnFpBuiltin").prop("disabled", !builtinOk);
+        $("#btnFpFutronic").prop("disabled", !futronicOk || futronicBusy);
         $("#btnFaceBuiltin").prop("disabled", devices.builtinCams.length === 0);
         $("#btnFaceWebcam").prop("disabled", devices.externalCams.length === 0);
 
         var notes = [];
         if (!devices.secure) {
             $("#divSfSecure").removeClass("hidden");
-            notes.push("Fingerprint and Face ID are off because this page is not a secure context.");
+            notes.push("Built-in fingerprint and Face ID are off because this page is not a secure context. The Futronic FS64 can still be used. This page starts its helper when you connect the scanner.");
         } else {
             $("#divSfSecure").addClass("hidden");
         }
-        if (!devices.platform && !devices.futronic) {
+        if (!builtinOk && !futronicOk) {
             notes.push("No built-in fingerprint authenticator or Futronic FS64 was found, so fingerprint sign-in is disabled.");
-        } else if (!devices.futronic) {
-            notes.push("Futronic FS64 was not detected. Use Check for Futronic FS64 if the scanner is plugged in.");
+        } else if (!futronicOk && devices.futronicMessage && devices.futronicMessage.indexOf("not open") !== -1) {
+            notes.push("The Futronic helper is installed and running. Unplug the FS64, plug it back in, then choose Connect Futronic FS64.");
+        } else if (!futronicOk) {
+            notes.push("Futronic FS64 was not detected. Choose Connect Futronic FS64. This page starts the helper installed on this computer.");
         }
         $("#sfDeviceNote").text(notes.join(" "));
     };
@@ -217,6 +231,72 @@ $.wms.login = (function() {
         }
     };
 
+    var detectFutronic = function() {
+        var done = $.Deferred();
+        $.ajax({
+            url: FUTRONIC_AGENT + "/health",
+            method: "GET",
+            dataType: "json",
+            timeout: 2000
+        }).done(function(data) {
+            devices.futronic = !!(data && data.scannerOpen === true && data.hmacConfigured === true);
+            devices.futronicMessage = data && data.message ? data.message : "";
+        }).fail(function() {
+            devices.futronic = false;
+            devices.futronicMessage = "Futronic FS64 was not detected. Connect the scanner, then choose Connect Futronic FS64.";
+        }).always(function() {
+            done.resolve();
+        });
+        return done.promise();
+    };
+
+    var launchFutronicHelper = function() {
+        var frame = document.getElementById("futronicLauncher");
+        if (!frame) {
+            frame = document.createElement("iframe");
+            frame.id = "futronicLauncher";
+            frame.setAttribute("aria-hidden", "true");
+            frame.style.display = "none";
+            document.body.appendChild(frame);
+        }
+        frame.src = FUTRONIC_PROTOCOL + "?" + Date.now();
+    };
+
+    var shutdownFutronic = function() {
+        devices.futronic = false;
+        if (window.fetch) {
+            fetch(FUTRONIC_AGENT + "/shutdown", { method: "POST", keepalive: true }).catch(function() {});
+        }
+    };
+
+    var waitForFutronic = function(attempts) {
+        var done = $.Deferred();
+        var tries = 0;
+        var poll = function() {
+            $.ajax({
+                url: FUTRONIC_AGENT + "/health",
+                method: "GET",
+                dataType: "json",
+                timeout: 1500
+            }).done(function(data) {
+                devices.futronic = !!(data && data.scannerOpen === true && data.hmacConfigured === true);
+                devices.futronicMessage = data && data.message ? data.message : "";
+                done.resolve(data);
+            }).fail(function() {
+                tries += 1;
+                if (tries >= attempts) {
+                    devices.futronic = false;
+                    devices.futronicMessage = "The Futronic helper did not start. Run Futronic Setup once on this computer, allow the browser to open it, and connect the FS64.";
+                    done.reject();
+                    return;
+                }
+                setTimeout(poll, 1000);
+            });
+        };
+        poll();
+        return done.promise();
+    };
+
     var detectDevices = function() {
         devices.secure = window.isSecureContext === true;
         var jobs = [];
@@ -231,15 +311,7 @@ $.wms.login = (function() {
             devices.platform = false;
         }
 
-        if (navigator.usb && navigator.usb.getDevices) {
-            jobs.push(navigator.usb.getDevices().then(function(list) {
-                devices.futronic = list.some(function(device) {
-                    return device.vendorId === FUTRONIC_VENDOR_ID;
-                });
-            }).catch(function() {
-                devices.futronic = false;
-            }));
-        }
+        jobs.push(detectFutronic());
 
         return $.when.apply($, jobs).always(function() {
             applyDeviceState();
@@ -260,6 +332,7 @@ $.wms.login = (function() {
     };
 
     var finishSession = function(result, successBox) {
+        shutdownFutronic();
         var payload2 = {
             LEVEL_ID : result.payload.USER_LEVEL_ID
         };
@@ -422,6 +495,372 @@ $.wms.login = (function() {
             });
     };
 
+    var stopFutronicPoll = function() {
+        if (futronicPoll) {
+            clearInterval(futronicPoll);
+            futronicPoll = null;
+        }
+    };
+
+    var resetFutronicCaptureWatch = function() {
+        futronicCaptureSeen = null;
+        futronicCaptureActive = null;
+        futronicCaptureArmed = false;
+        futronicUseCaptureGeneration = false;
+    };
+
+    var startFutronicPoll = function() {
+        stopFutronicPoll();
+        futronicPoll = setInterval(function() {
+            $.ajax({
+                url: FUTRONIC_AGENT + "/status",
+                method: "GET",
+                dataType: "json",
+                timeout: 1500
+            }).done(function(data) {
+                applyFutronicStatus(data);
+            }).fail(function() {
+                if (futronicCaptureArmed && futronicBusy) {
+                    setFutronicPhase("error", "The scanner is unavailable. Choose Connect Futronic FS64 and check that the FS64 is plugged in. You can use SMS OTP instead.");
+                }
+            });
+        }, 500);
+    };
+
+    var applyFutronicStatus = function(data) {
+        if (!data || !futronicBusy) {
+            return;
+        }
+        var capture = typeof data.capture === "number" ? data.capture : null;
+        if (!futronicCaptureArmed) {
+            if (capture !== null) {
+                futronicCaptureSeen = capture;
+            }
+            return;
+        }
+        if (!futronicUseCaptureGeneration || capture === null) {
+            setFutronicPhase(data.phase, data.message);
+            return;
+        }
+        if (futronicCaptureActive === null) {
+            if (futronicCaptureSeen === null || capture === futronicCaptureSeen) {
+                if (futronicCaptureSeen === null) {
+                    futronicCaptureSeen = capture;
+                }
+                return;
+            }
+            futronicCaptureActive = capture;
+        }
+        if (capture !== futronicCaptureActive) {
+            return;
+        }
+        setFutronicPhase(data.phase, data.message);
+    };
+
+    var futronicPhaseCopy = function(phase) {
+        var enroll = futronicPurpose !== "login";
+        var captions = enroll ? {
+            idle: "Ready to register",
+            waiting: "Starting the scanner",
+            place: "Place your finger",
+            lift: "Lift your finger",
+            "place-again": "Place the same finger again",
+            match: "Checking both scans",
+            done: "Fingerprint captured",
+            error: "Registration did not finish"
+        } : {
+            idle: "Ready to sign in",
+            waiting: "Starting the scanner",
+            place: "Place your registered finger",
+            lift: "Lift your finger",
+            "place-again": "Place the same finger again",
+            match: "Checking your fingerprint",
+            done: "Fingerprint matched",
+            error: "Sign-in did not finish"
+        };
+        var counts = {
+            idle: "",
+            waiting: "",
+            place: enroll ? "Scan 1 of 2" : "One scan",
+            lift: enroll ? "Scan 1 of 2" : "",
+            "place-again": "Scan 2 of 2",
+            match: enroll ? "Scan 2 of 2" : "One scan",
+            done: enroll ? "Both scans accepted" : "Scan accepted",
+            error: ""
+        };
+        return {
+            caption: captions[phase] || captions.idle,
+            count: counts[phase] || ""
+        };
+    };
+
+    var announceFutronic = function(announcement) {
+        if (announcement === futronicAnnouncement) {
+            return;
+        }
+        futronicAnnouncement = announcement;
+        var node = document.getElementById("futronicLive");
+        if (!node) {
+            return;
+        }
+        node.textContent = "";
+        if (futronicAnnounceTimer) {
+            clearTimeout(futronicAnnounceTimer);
+        }
+        futronicAnnounceTimer = setTimeout(function() {
+            node.textContent = announcement;
+        }, 50);
+    };
+
+    var setFutronicPhase = function(phase, message) {
+        var known = {
+            idle: true,
+            waiting: true,
+            place: true,
+            lift: true,
+            "place-again": true,
+            match: true,
+            done: true,
+            error: true
+        };
+        if (!known[phase]) {
+            phase = "idle";
+        }
+        if (futronicBusy && phase === "idle") {
+            phase = "waiting";
+            if (!message || message === "Ready.") {
+                message = "Starting the scanner. Keep your finger off the glass until it says to place it.";
+            }
+        }
+        var copy = futronicPhaseCopy(phase);
+        var detail = message || "";
+        var announcement = copy.caption;
+        if (copy.count) {
+            announcement += ". " + copy.count;
+        }
+        if (detail) {
+            announcement += ". " + detail;
+        }
+        var tone = {
+            idle: "alert-info",
+            waiting: "alert-info",
+            place: "alert-info",
+            lift: "alert-warning",
+            "place-again": "alert-info",
+            match: "alert-info",
+            done: "alert-success",
+            error: "alert-danger"
+        };
+        var $visual = $("#futronicVisual");
+        if ($visual.attr("data-phase") !== phase) {
+            $visual.attr("data-phase", phase);
+        }
+        if ($visual.attr("data-purpose") !== futronicPurpose) {
+            $visual.attr("data-purpose", futronicPurpose);
+        }
+        if ($("#futronicVisualCaption").text() !== copy.caption) {
+            $("#futronicVisualCaption").text(copy.caption);
+        }
+        var $count = $("#futronicScanCount");
+        if ($count.text() !== copy.count) {
+            $count.text(copy.count);
+        }
+        $count.toggleClass("hidden", !copy.count);
+        if (detail && $("#futronicStatus").text() !== detail) {
+            $("#futronicStatus").text(detail);
+        }
+        $("#futronicStatus")
+            .removeClass("alert-info alert-warning alert-success alert-danger")
+            .addClass(tone[phase] || "alert-info");
+        announceFutronic(announcement);
+    };
+
+    var futronicNote = function(message) {
+        setFutronicPhase("error", message);
+        showSfAlert(message);
+    };
+
+    var openFutronicPanel = function() {
+        var enrolled = factorStatus.methods && factorStatus.methods.fingerprint_futronic;
+        hideSfPanels();
+        $("#divSfAlert").addClass("hidden").text("");
+        $("#divSfFutronic").removeClass("hidden");
+        openSecondFactorModal();
+        futronicAnnouncement = "";
+        if (enrolled) {
+            futronicPurpose = "login";
+            $("#futronicTitle").text("Confirm your fingerprint");
+            $("#futronicLead").text("Sign in with the finger you already registered on this Futronic scanner.");
+            $("#futronicStep1").html("<strong>1.</strong> When it says place your finger, put that same finger flat on the glass.");
+            $("#futronicStep2").addClass("hidden");
+            setFutronicPhase("idle", "Press Scan fingerprint. Keep your finger off the glass until it says to place it.");
+            $("#btnFutronicStart").text("Scan fingerprint");
+        } else {
+            futronicPurpose = "enroll";
+            $("#futronicTitle").text("Register your fingerprint");
+            $("#futronicLead").text("Registration uses two scans of the same finger. A fingerprint saved in Windows Hello is not used.");
+            $("#futronicStep1").html("<strong>1.</strong> When it says place your finger, put one finger flat on the glass and hold still.");
+            $("#futronicStep2").removeClass("hidden").html("<strong>2.</strong> When it says lift, take that finger off. Place the same finger again when it asks.");
+            setFutronicPhase("idle", "Press Save fingerprint. Keep your finger off the glass until it says to place it.");
+            $("#btnFutronicStart").text("Save fingerprint");
+        }
+    };
+
+    var futronicAgentError = function(xhr) {
+        var message = "The Futronic helper is not running. Choose Connect Futronic FS64. If this computer has not been set up, run Futronic Setup once and allow the browser to open it.";
+        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+            message = xhr.responseJSON.message;
+        }
+        return message;
+    };
+
+    var finishFutronic = function(verified) {
+        if (verified.status === 'SUCCESS') {
+            if (!factorStatus.methods) {
+                factorStatus.methods = {};
+            }
+            factorStatus.methods.fingerprint_futronic = true;
+            finishSession(pendingLogin, "#divSfSuccess");
+            return;
+        }
+        if (verified.locked) {
+            shutdownFutronic();
+            showFactorHome();
+            showSfAlert(verified.message || 'Futronic sign-in is paused after 5 tries. Use SMS OTP or your PIN.');
+            return;
+        }
+        futronicNote((verified.message || 'Fingerprint did not match.') + ' You can use SMS OTP instead.');
+    };
+
+    var endFutronicAttempt = function() {
+        futronicBusy = false;
+        resetFutronicCaptureWatch();
+        stopFutronicPoll();
+        $("#btnFutronicStart").prop("disabled", false);
+        applyDeviceState();
+    };
+
+    var runFutronic = function() {
+        if (!pendingLogin || futronicBusy) {
+            return;
+        }
+        launchFutronicHelper();
+        $("#divSfAlert").addClass("hidden").text("");
+        $("#btnFutronicStart").prop("disabled", true);
+        futronicBusy = true;
+        resetFutronicCaptureWatch();
+        setFutronicPhase("waiting", "Starting the scanner. Keep your finger off the glass until it says to place it.");
+        startFutronicPoll();
+        applyDeviceState();
+        var startScan = function() {
+        $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/futronicOptions', JSON.stringify({
+            TOKEN: pendingLogin.payload.SECOND_FACTOR_TOKEN
+        })).done(function(result) {
+            if (!result || result.status === 'ERROR') {
+                endFutronicAttempt();
+                futronicNote("Unable to start the Futronic scanner. You can use SMS OTP instead.");
+                return;
+            }
+            if (result.locked) {
+                endFutronicAttempt();
+                finishFutronic(result);
+                return;
+            }
+            if (result.status !== 'SUCCESS' || !result.payload || !result.payload.challenge) {
+                endFutronicAttempt();
+                futronicNote((result.message || 'Unable to start the Futronic scanner.') + ' You can use SMS OTP instead.');
+                return;
+            }
+            var enrolling = result.payload.purpose !== 'login';
+            futronicPurpose = enrolling ? "enroll" : "login";
+            if (($("#futronicVisual").attr("data-phase") || "") === "waiting") {
+                setFutronicPhase("waiting", "Starting the scanner. Keep your finger off the glass until it says to place it.");
+            }
+            var agentBody = { challenge: result.payload.challenge };
+            var agentPath = "/enroll";
+            if (!enrolling) {
+                agentBody.template = result.payload.template;
+                agentPath = "/verify";
+            }
+            var sendAgent = function() {
+                futronicCaptureActive = null;
+                futronicCaptureArmed = true;
+                $.ajax({
+                url: FUTRONIC_AGENT + agentPath,
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(agentBody),
+                dataType: "json",
+                timeout: 120000
+            }).done(function(scan) {
+                var verifyPath = enrolling
+                    ? '/ppa-api-uams/wsv1/api/futronicEnroll'
+                    : '/ppa-api-uams/wsv1/api/futronicVerify';
+                var body = {
+                    TOKEN: pendingLogin.payload.SECOND_FACTOR_TOKEN,
+                    challenge: result.payload.challenge,
+                    mac: scan.mac
+                };
+                if (enrolling) {
+                    body.template = scan.template;
+                    body.finger = scan.finger || 0;
+                } else {
+                    body.match = scan.match === true;
+                }
+                $.wms.executeExternalPost(verifyPath, JSON.stringify(body)).done(function(verified) {
+                    endFutronicAttempt();
+                    if (!verified || verified.status === 'ERROR') {
+                        futronicNote("The fingerprint result could not be saved. You can use SMS OTP instead.");
+                        return;
+                    }
+                    finishFutronic(verified);
+                });
+            }).fail(function(xhr) {
+                endFutronicAttempt();
+                futronicNote(futronicAgentError(xhr) + " You can use SMS OTP instead.");
+            });
+            };
+            $.ajax({
+                url: FUTRONIC_AGENT + "/status",
+                method: "GET",
+                dataType: "json",
+                timeout: 1500
+            }).done(function(data) {
+                if (data && typeof data.capture === "number") {
+                    futronicCaptureSeen = data.capture;
+                    futronicUseCaptureGeneration = true;
+                } else {
+                    futronicUseCaptureGeneration = false;
+                }
+            }).fail(function() {
+                futronicUseCaptureGeneration = false;
+            }).always(function() {
+                if (!futronicBusy) {
+                    return;
+                }
+                sendAgent();
+            });
+        });
+        };
+        waitForFutronic(12).done(function(data) {
+            if (!futronicBusy) {
+                return;
+            }
+            if (!data || data.scannerOpen !== true || data.hmacConfigured !== true) {
+                endFutronicAttempt();
+                futronicNote((data && data.message ? data.message : "Futronic FS64 was not detected.") + " You can use SMS OTP instead.");
+                return;
+            }
+            startScan();
+        }).fail(function() {
+            if (!futronicBusy) {
+                return;
+            }
+            endFutronicAttempt();
+            futronicNote(devices.futronicMessage + " You can use SMS OTP instead.");
+        });
+    };
+
     var sendSmsOtp = function(result) {
         OTP_KEY = Math.floor(Math.random()*90000) + 10000;
         $("#otpkeygen").val(OTP_KEY);
@@ -442,6 +881,7 @@ $.wms.login = (function() {
         if (!pendingLogin) {
             return;
         }
+        shutdownFutronic();
         stopFacePreview();
         var dt = sendSmsOtp(pendingLogin);
         hideSfPanels();
@@ -988,31 +1428,49 @@ $.wms.login = (function() {
             hideSfPanels();
             $("#divSfFingerprint").removeClass("hidden");
             openSecondFactorModal();
-            $("#fpHint").text("Windows opens Choose a passkey. Choose this computer, then use the fingerprint already saved on it. Built-in is " + (devices.platform ? "available (" + methodLabel('fingerprint_builtin') + ")." : "not reported by the browser.") + " Futronic FS64 is " + (devices.futronic ? "connected (" + methodLabel('fingerprint_futronic') + ")." : "not detected."));
+            $("#fpHint").text("Built-in uses the fingerprint already saved in Windows Hello (" + (devices.secure && devices.platform ? "available, " + methodLabel('fingerprint_builtin') : "not available") + "). Futronic FS64 needs its own fingerprint enrolled on that scanner (" + (devices.futronic ? "connected, " + methodLabel('fingerprint_futronic') : "not detected") + ").");
         });
         $("#btnFpBack,#btnFaceBack,#btnPinBack").on("click", function(){
             showFactorHome();
+        });
+        $("#btnFutronicBack").on("click", function(){
+            if (futronicBusy) {
+                return;
+            }
+            stopFutronicPoll();
+            shutdownFutronic();
+            hideSfPanels();
+            $("#divSfAlert").addClass("hidden").text("");
+            $("#divSfFingerprint").removeClass("hidden");
         });
         $("#btnFpBuiltin").on("click", function(){
             runWebAuthn('fingerprint_builtin', 'Built-in fingerprint scanner');
         });
         $("#btnFpFutronic").on("click", function(){
-            runWebAuthn('fingerprint_futronic', 'Futronic FS64');
-        });
-        $("#btnSfCheckFutronic").on("click", function(){
-            if (!navigator.usb || !navigator.usb.requestDevice) {
-                showSfAlert("This browser cannot check USB scanners. Fingerprint stays disabled unless a built-in scanner is present.");
+            if ($(this).prop("disabled")) {
                 return;
             }
-            navigator.usb.requestDevice({ filters: [{ vendorId: FUTRONIC_VENDOR_ID }] }).then(function() {
-                devices.futronic = true;
+            openFutronicPanel();
+        });
+        $("#btnFutronicStart").on("click", function(){
+            runFutronic();
+        });
+        $("#btnSfCheckFutronic").on("click", function(){
+            var button = $(this);
+            if (button.prop("disabled")) {
+                return;
+            }
+            button.prop("disabled", true);
+            launchFutronicHelper();
+            waitForFutronic(12).always(function() {
+                button.prop("disabled", false);
                 applyDeviceState();
-                showSfAlert("");
-                $("#divSfAlert").addClass("hidden");
-                $("#sfDeviceNote").text("Futronic FS64 is connected. You can use fingerprint sign-in.");
-            }).catch(function() {
-                devices.futronic = false;
-                applyDeviceState();
+                if (devices.futronic) {
+                    $("#divSfAlert").addClass("hidden").text("");
+                    $("#sfDeviceNote").text("Futronic FS64 is connected. Enroll a finger on this scanner. A Windows Hello fingerprint is not reused.");
+                } else {
+                    showSfAlert(devices.futronicMessage || "Futronic FS64 was not detected. Run Futronic Setup once, allow the browser to open it, and connect the scanner.");
+                }
             });
         });
         $("#btnSfFace").on("click", function(){
@@ -1103,7 +1561,7 @@ $.wms.login = (function() {
                 }
             });
         });
-        $("#btnSfSms,#btnFpSms,#btnFaceSms,#btnPinSms").on("click", function(){
+        $("#btnSfSms,#btnFpSms,#btnFutronicSms,#btnFaceSms,#btnPinSms").on("click", function(){
             openSmsOtp();
         });
 
