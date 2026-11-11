@@ -31,11 +31,51 @@
   line-height: 8px;
   overflow: hidden;
 }
-#facePreview {
+#faceStage {
+  position: relative;
   width: 100%;
   height: 280px;
+  background: #111;
+  overflow: hidden;
+  display: none;
+}
+#facePreview {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   background: #111;
+}
+#faceGuide {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 148px;
+  height: 196px;
+  transform: translate(-50%, -52%);
+  pointer-events: none;
+}
+#faceOval {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.28);
+}
+#faceGrid {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  top: 8%;
+  bottom: 8%;
+  display: none;
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(16, 1fr);
+}
+#faceGrid.on {
+  display: grid;
+}
+#faceGrid span.mismatch {
+  background: rgba(214, 40, 40, 0.72);
 }
 </style>
 
@@ -159,7 +199,14 @@
 										<div>&nbsp;</div>
 										<select id="selFaceCamera" class="form-control font_18 hidden"></select>
 										<div>&nbsp;</div>
-										<video id="facePreview" autoplay playsinline muted style="display:none;"></video>
+										<div id="faceStage">
+											<video id="facePreview" autoplay playsinline muted></video>
+											<div id="faceGuide">
+												<div id="faceOval"></div>
+												<div id="faceGrid"></div>
+											</div>
+										</div>
+										<p class="text-muted" id="faceGuideNote" style="display:none;"></p>
 										<div>&nbsp;</div>
 										<button type="button" id="btnFaceContinue" class="btn btn-primary btn-block font_20 hidden">Confirm Face ID</button>
 										<div>&nbsp;</div>

@@ -73,7 +73,47 @@ $.wms.login = (function() {
         var video = document.getElementById('facePreview');
         if (video) {
             video.srcObject = null;
-            video.style.display = 'none';
+        }
+        $("#faceStage,#faceGuideNote").hide();
+        $("#faceGrid").removeClass("on").empty();
+    };
+
+    var ensureFaceGrid = function() {
+        var grid = $("#faceGrid");
+        if (grid.children().length === 256) {
+            return grid;
+        }
+        grid.empty();
+        for (var i = 0; i < 256; i++) {
+            grid.append("<span></span>");
+        }
+        return grid;
+    };
+
+    var paintFaceMismatch = function(mismatch) {
+        var grid = ensureFaceGrid();
+        grid.addClass("on");
+        var max = 0;
+        var values = mismatch || [];
+        for (var i = 0; i < values.length; i++) {
+            if (values[i] > max) {
+                max = values[i];
+            }
+        }
+        grid.children().each(function(index) {
+            var hot = max > 0 && values[index] / max >= 0.55;
+            this.className = hot ? "mismatch" : "";
+        });
+    };
+
+    var showFaceGuide = function(enrolled) {
+        $("#faceStage,#faceGuideNote").show();
+        if (enrolled) {
+            ensureFaceGrid().addClass("on");
+            $("#faceGuideNote").text("Fit your face inside the guide. Red marks the parts that do not match the saved Face ID.");
+        } else {
+            $("#faceGrid").removeClass("on").empty();
+            $("#faceGuideNote").text("Fit your face inside the guide, then choose Save Face ID.");
         }
     };
 
@@ -466,7 +506,9 @@ $.wms.login = (function() {
         } else {
             select.addClass("hidden");
         }
-        if (factorStatus.methods && factorStatus.methods[method]) {
+        var enrolled = factorStatus.methods && factorStatus.methods[method];
+        showFaceGuide(enrolled);
+        if (enrolled) {
             $("#btnFaceContinue").addClass("hidden");
             $("#faceHint").removeClass("hidden").text("Look at the camera. Face ID continues automatically when your face matches.");
         } else {
@@ -614,7 +656,10 @@ $.wms.login = (function() {
                 return;
             }
             faceCheckBusy = false;
-            $("#faceHint").removeClass("hidden").text("Look at the camera. Face ID continues automatically when your face matches.");
+            if (result.mismatch) {
+                paintFaceMismatch(result.mismatch);
+            }
+            $("#faceHint").removeClass("hidden").text(result.message || "Red areas differ from the saved Face ID. Adjust your face inside the guide.");
         });
     };
 
@@ -629,6 +674,8 @@ $.wms.login = (function() {
             }
             var sample = captureFaceSample(document.getElementById('facePreview'));
             if (!sample) {
+                paintFaceMismatch([]);
+                $("#faceHint").removeClass("hidden").text("Move your face into the guide.");
                 return;
             }
             submitMatchedFace(sample);
@@ -642,7 +689,7 @@ $.wms.login = (function() {
             faceStream = stream;
             var video = document.getElementById('facePreview');
             video.srcObject = stream;
-            video.style.display = 'block';
+            showFaceGuide(faceSelection && factorStatus.methods && factorStatus.methods[faceSelection.method]);
             if (faceSelection && factorStatus.methods && factorStatus.methods[faceSelection.method]) {
                 watchForMatchingFace();
             }
@@ -746,6 +793,9 @@ $.wms.login = (function() {
                     factorStatus.methods[faceSelection.method] = true;
                     finishSession(pendingLogin, "#divSfSuccess");
                 } else {
+                    if (result.mismatch) {
+                        paintFaceMismatch(result.mismatch);
+                    }
                     $("#faceHint").removeClass("hidden").text((result.message || 'Face ID did not match.') + ' Stay on this camera and try again, or use SMS OTP.');
                 }
             });
