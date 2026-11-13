@@ -200,8 +200,20 @@ $.wms.login = (function() {
         openSecondFactorModal();
     };
 
+    var builtinChallenge = null;
+    var builtinPrepareToken = 0;
+    var fpFutronicTail = "Checking the Futronic FS64.";
+
+    var renderFpHint = function() {
+        var builtinLabel = "not available";
+        if (devices.secure && devices.platform) {
+            builtinLabel = builtinChallenge ? "available, " + methodLabel("fingerprint_builtin") : "preparing";
+        }
+        $("#fpHint").text("Built-in uses the fingerprint already saved in Windows Hello (" + builtinLabel + "). " + fpFutronicTail);
+    };
+
     var applyDeviceState = function() {
-        var builtinOk = devices.secure && devices.platform;
+        var builtinOk = devices.secure && devices.platform && !!builtinChallenge;
         var futronicOk = devices.futronic === true;
         $("#btnSfFingerprint").prop("disabled", false);
         var facePossible = devices.secure && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && !devices.noCamera;
@@ -376,13 +388,23 @@ $.wms.login = (function() {
         return "Set up";
     };
 
+    var savedEnforceFocus = null;
+
     var pauseModalFocus = function() {
         $(document).off("focusin.bs.modal");
+        if (!savedEnforceFocus && $.fn.modal && $.fn.modal.Constructor && $.fn.modal.Constructor.prototype.enforceFocus) {
+            savedEnforceFocus = $.fn.modal.Constructor.prototype.enforceFocus;
+            $.fn.modal.Constructor.prototype.enforceFocus = function() {};
+        }
     };
 
     var resumeModalFocus = function() {
+        if (savedEnforceFocus && $.fn.modal && $.fn.modal.Constructor) {
+            $.fn.modal.Constructor.prototype.enforceFocus = savedEnforceFocus;
+            savedEnforceFocus = null;
+        }
         var modal = $("#sfModal").data("bs.modal");
-        if (modal && modal.enforceFocus) {
+        if (modal && modal.isShown && modal.enforceFocus) {
             modal.enforceFocus();
         }
     };
@@ -400,6 +422,55 @@ $.wms.login = (function() {
             : (cancelled
                 ? "Fingerprint was cancelled. Try again, or use PIN or SMS OTP."
                 : "The built-in fingerprint could not be used. Try again, or use PIN or SMS OTP."));
+        prepareBuiltinWebAuthn();
+    };
+
+    var prepareBuiltinWebAuthn = function() {
+        if (!pendingLogin) {
+            return;
+        }
+        var tokenNum = ++builtinPrepareToken;
+        builtinChallenge = null;
+        applyDeviceState();
+        renderFpHint();
+        var token = pendingLogin.payload.SECOND_FACTOR_TOKEN;
+        $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/webauthnLoginOptions', JSON.stringify({
+            TOKEN: token,
+            METHOD: 'fingerprint_builtin'
+        })).done(function(result) {
+            if (tokenNum !== builtinPrepareToken) {
+                return;
+            }
+            if (result.status === 'SETUP') {
+                if (!factorStatus.methods) {
+                    factorStatus.methods = {};
+                }
+                factorStatus.methods.fingerprint_builtin = false;
+                $.wms.executeExternalPost('/ppa-api-uams/wsv1/api/webauthnRegisterOptions', JSON.stringify({
+                    TOKEN: token,
+                    METHOD: 'fingerprint_builtin'
+                })).done(function(registerResult) {
+                    if (tokenNum !== builtinPrepareToken) {
+                        return;
+                    }
+                    if (registerResult.status === 'SUCCESS' && registerResult.payload) {
+                        builtinChallenge = { enrolled: false, options: registerResult.payload };
+                    }
+                    applyDeviceState();
+                    renderFpHint();
+                });
+                return;
+            }
+            if (result.status === 'SUCCESS' && result.payload) {
+                if (!factorStatus.methods) {
+                    factorStatus.methods = {};
+                }
+                factorStatus.methods.fingerprint_builtin = true;
+                builtinChallenge = { enrolled: true, options: result.payload };
+            }
+            applyDeviceState();
+            renderFpHint();
+        });
     };
 
     var runWebAuthn = function(method, deviceLabel) {
@@ -457,9 +528,6 @@ $.wms.login = (function() {
             var request;
             pauseModalFocus();
             try {
-                window.focus();
-            } catch (ignoreFocus) {}
-            try {
             if (!enrolled) {
                 request = navigator.credentials.create({
                     publicKey: {
@@ -476,8 +544,7 @@ $.wms.login = (function() {
                         ],
                         authenticatorSelection: {
                             authenticatorAttachment: 'platform',
-                            residentKey: 'discouraged',
-                            requireResidentKey: false,
+                            residentKey: 'preferred',
                             userVerification: 'required'
                         },
                         timeout: 60000,
@@ -1579,14 +1646,16 @@ $.wms.login = (function() {
             openSecondFactorModal();
             devices.futronic = false;
             $("#btnFpFutronic").prop("disabled", true);
-            var builtinLabel = devices.secure && devices.platform ? "available, " + methodLabel('fingerprint_builtin') : "not available";
-            $("#fpHint").text("Built-in uses the fingerprint already saved in Windows Hello (" + builtinLabel + "). Checking the Futronic FS64.");
-            waitForFutronic(3).always(function() {
+            fpFutronicTail = "Checking the Futronic FS64.";
+            renderFpHint();
+            prepareBuiltinWebAuthn();
+            launchFutronicHelper();
+            waitForFutronic(12).always(function() {
                 applyDeviceState();
-                var futronicText = devices.futronic
+                fpFutronicTail = "Futronic FS64 " + (devices.futronic
                     ? "is connected (" + methodLabel("fingerprint_futronic") + ")."
-                    : (devices.futronicMessage || "was not detected, so that choice stays off.");
-                $("#fpHint").text("Built-in uses the fingerprint already saved in Windows Hello (" + builtinLabel + "). Futronic FS64 " + futronicText);
+                    : (devices.futronicMessage || "was not detected, so that choice stays off."));
+                renderFpHint();
             });
         });
         $("#btnFpBack,#btnFaceBack,#btnPinBack").on("click", function(){
@@ -1606,9 +1675,15 @@ $.wms.login = (function() {
             showFactorHome();
         });
         $("#btnFpBuiltin").on("click", function(){
+            if ($(this).prop("disabled") || !builtinChallenge) {
+                return;
+            }
             $("#divSfAlert").addClass("hidden").text("");
             $("#fpHint").removeClass("hidden");
-            runWebAuthn('fingerprint_builtin', 'Built-in fingerprint scanner');
+            var ready = builtinChallenge;
+            builtinChallenge = null;
+            applyDeviceState();
+            runWebAuthnCeremony('fingerprint_builtin', 'Built-in fingerprint scanner', ready.options, ready.enrolled);
         });
         $("#btnFpFutronic").on("click", function(){
             if ($(this).prop("disabled")) {
