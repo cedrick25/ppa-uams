@@ -15,6 +15,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $config['app_public_hosts'] = array(
 	'rpxy.probation.gov.ph',
 	'uams.probation.gov.ph',
+	'uams.enterpsys.com',
 	'localhost',
 	'127.0.0.1',
 	'ks',

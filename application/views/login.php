@@ -28,8 +28,31 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 #sfModal .modal-header {
-  padding: 20px 24px 16px;
+  position: relative;
+  padding: 20px 56px 16px 24px;
   border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+}
+#sfModal .sf-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4b5565;
+  font-size: 24px;
+  line-height: 32px;
+  text-align: center;
+}
+#sfModal .sf-close:hover,
+#sfModal .sf-close:focus {
+  background: #eceff4;
+  color: #111827;
+  outline: none;
 }
 #sfModal .modal-title {
   font-size: 20px;
@@ -66,7 +89,6 @@
 #sfModal #futronicLead,
 #sfModal #futronicStep1,
 #sfModal #futronicStep2,
-#sfModal #fpHint,
 #sfModal #sfDeviceNote,
 #sfModal #faceGuideNote {
   margin: 0;
@@ -147,6 +169,75 @@
   border-radius: 8px;
   font-size: 15px;
   box-shadow: none;
+}
+#sfModal .form-control.pin-mask {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
+#pinNumpad {
+  display: grid;
+  grid-template-columns: repeat(3, 76px);
+  justify-content: center;
+  gap: 14px 18px;
+  padding: 4px 0 8px;
+}
+#sfModal #pinNumpad .pin-key {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  min-height: 76px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #eceff4;
+  color: #111827;
+  box-shadow: none;
+  text-align: center;
+  line-height: 1;
+}
+#sfModal #pinNumpad .pin-key:hover {
+  background: #e2e7ef;
+  color: #111827;
+}
+#sfModal #pinNumpad .pin-key:active {
+  background: #d3dae4;
+}
+#sfModal #pinNumpad .pin-digit {
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+}
+#sfModal #pinNumpad .pin-letters {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  color: #6b7487;
+}
+#sfModal #pinNumpad .pin-key-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+#sfModal #pinNumpad .pin-key-back {
+  background: transparent;
+}
+#sfModal #pinNumpad .pin-key-back svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#sfModal #pinNumpad .pin-key-back:hover,
+#sfModal #pinNumpad .pin-key-back:active {
+  background: #eceff4;
 }
 #sfModal .input-group-addon {
   border-radius: 8px 0 0 8px;
@@ -334,6 +425,7 @@
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
+				<button type="button" class="sf-close" id="btnSfClose" aria-label="Close">&times;</button>
 				<h4 class="modal-title" id="sfModalTitle">Second authentication</h4>
 			</div>
 			<div class="modal-body">
@@ -353,12 +445,11 @@
 										<button type="button" id="btnSfFace" class="btn btn-block sf-choice" disabled>Face ID</button>
 										<button type="button" id="btnSfPin" class="btn btn-block sf-choice">PIN</button>
 										<button type="button" id="btnSfSms" class="btn btn-block sf-choice">SMS OTP</button>
-										<button type="button" id="btnSfCheckFutronic" class="btn btn-link">Connect Futronic FS64</button>
 									</div>
 
 									<div id="divSfFingerprint" class="hidden">
 										<p class="sf-kicker">Choose a fingerprint scanner</p>
-										<p class="sf-note" id="fpHint"></p>
+										<div class="alert alert-info" role="alert" id="fpHint"></div>
 										<button type="button" id="btnFpBuiltin" class="btn btn-block sf-choice" disabled>Built-in fingerprint scanner</button>
 										<button type="button" id="btnFpFutronic" class="btn btn-block sf-choice" disabled>Futronic FS64</button>
 										<button type="button" id="btnFpBack" class="btn btn-default btn-block">Back</button>
@@ -385,10 +476,10 @@
 						<p id="futronicLive" class="sr-only" aria-live="polite" aria-atomic="true"></p>
 										<p id="futronicStep1"><strong>1.</strong> When the picture says place and the light is on, put one finger flat on the glass and hold still.</p>
 										<p id="futronicStep2"><strong>2.</strong> When it says lift, take that finger off. Then place the same finger again when the light comes back on.</p>
-										<div class="alert alert-info" id="futronicStatus" aria-live="off">Press Save fingerprint. Keep your finger off the glass until the picture says to place it.</div>
-										<button type="button" id="btnFutronicStart" class="btn btn-primary btn-block">Save fingerprint</button>
+										<div class="alert alert-info" id="futronicStatus" aria-live="off">Starting the scanner. Keep your finger off the glass until the picture says to place it.</div>
+										<button type="button" id="btnFutronicStart" class="btn btn-primary btn-block hidden">Scan fingerprint</button>
 										<button type="button" id="btnFutronicBack" class="btn btn-default btn-block">Back</button>
-										<button type="button" id="btnFutronicSms" class="btn btn-link">Use SMS OTP instead</button>
+										<button type="button" id="btnFutronicOther" class="btn btn-default btn-block hidden">Other authentication options</button>
 									</div>
 
 									<div id="divSfFace" class="hidden">
@@ -414,36 +505,49 @@
 										<div id="pinEnter">
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPin" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="PIN" autocomplete="off">
+												<input id="txtPin" type="text" inputmode="numeric" maxlength="4" class="form-control pin-mask" placeholder="PIN" autocomplete="off" spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore="true">
 											</div>
-											<button type="button" id="btnPinSubmit" class="btn btn-primary btn-block">Submit PIN</button>
 											<button type="button" id="btnPinChangeShow" class="btn btn-default btn-block">Change PIN</button>
 										</div>
 										<div id="pinSetup" class="hidden">
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinNew" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="New PIN, 4 to 8 digits" autocomplete="off">
+												<input id="txtPinNew" type="text" inputmode="numeric" maxlength="4" class="form-control pin-mask" placeholder="New PIN, 4 digits" autocomplete="off" spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore="true">
 											</div>
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinConfirm" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="Confirm PIN" autocomplete="off">
+												<input id="txtPinConfirm" type="text" inputmode="numeric" maxlength="4" class="form-control pin-mask" placeholder="Confirm PIN" autocomplete="off" spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore="true">
 											</div>
 											<button type="button" id="btnPinSave" class="btn btn-primary btn-block">Save PIN and continue</button>
 										</div>
 										<div id="pinChange" class="hidden">
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinCurrent" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="Current PIN" autocomplete="off">
+												<input id="txtPinCurrent" type="text" inputmode="numeric" maxlength="4" class="form-control pin-mask" placeholder="Current PIN" autocomplete="off" spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore="true">
 											</div>
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinChangeNew" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="New PIN, 4 to 8 digits" autocomplete="off">
+												<input id="txtPinChangeNew" type="text" inputmode="numeric" maxlength="4" class="form-control pin-mask" placeholder="New PIN, 4 digits" autocomplete="off" spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore="true">
 											</div>
 											<div class="input-group">
 												<span class="input-group-addon"><i class="fa fa-lock"></i></span>
-												<input id="txtPinChangeConfirm" type="password" inputmode="numeric" maxlength="8" class="form-control" placeholder="Confirm new PIN" autocomplete="off">
+												<input id="txtPinChangeConfirm" type="text" inputmode="numeric" maxlength="4" class="form-control pin-mask" placeholder="Confirm new PIN" autocomplete="off" spellcheck="false" autocapitalize="off" data-lpignore="true" data-1p-ignore="true">
 											</div>
 											<button type="button" id="btnPinUpdate" class="btn btn-primary btn-block">Update PIN</button>
+										</div>
+										<div id="pinNumpad" class="hidden" role="group" aria-label="PIN keypad">
+											<button type="button" class="pin-key" data-digit="1"><span class="pin-digit">1</span></button>
+											<button type="button" class="pin-key" data-digit="2"><span class="pin-digit">2</span><span class="pin-letters">ABC</span></button>
+											<button type="button" class="pin-key" data-digit="3"><span class="pin-digit">3</span><span class="pin-letters">DEF</span></button>
+											<button type="button" class="pin-key" data-digit="4"><span class="pin-digit">4</span><span class="pin-letters">GHI</span></button>
+											<button type="button" class="pin-key" data-digit="5"><span class="pin-digit">5</span><span class="pin-letters">JKL</span></button>
+											<button type="button" class="pin-key" data-digit="6"><span class="pin-digit">6</span><span class="pin-letters">MNO</span></button>
+											<button type="button" class="pin-key" data-digit="7"><span class="pin-digit">7</span><span class="pin-letters">PQRS</span></button>
+											<button type="button" class="pin-key" data-digit="8"><span class="pin-digit">8</span><span class="pin-letters">TUV</span></button>
+											<button type="button" class="pin-key" data-digit="9"><span class="pin-digit">9</span><span class="pin-letters">WXYZ</span></button>
+											<span class="pin-key pin-key-spacer" aria-hidden="true"></span>
+											<button type="button" class="pin-key" data-digit="0"><span class="pin-digit">0</span></button>
+											<button type="button" class="pin-key pin-key-back" data-action="back" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8.4 5.2h11.1A1.6 1.6 0 0 1 21.1 6.8v10.4a1.6 1.6 0 0 1-1.6 1.6H8.4c-.5 0-.9-.2-1.2-.6L2.4 12.7a1 1 0 0 1 0-1.4l4.8-5.5c.3-.4.7-.6 1.2-.6z"/><path d="M11.1 9.2l4.8 5.6M15.9 9.2l-4.8 5.6"/></svg></button>
 										</div>
 										<button type="button" id="btnPinBack" class="btn btn-default btn-block">Back</button>
 										<button type="button" id="btnPinSms" class="btn btn-link">Use SMS OTP instead</button>

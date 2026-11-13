@@ -32,6 +32,7 @@ $__req_host = strtolower(preg_replace('/:\d+$/', '', $__req_host));
 $__public_hosts = array(
 	'rpxy.probation.gov.ph',
 	'uams.probation.gov.ph',
+	'uams.enterpsys.com',
 	'localhost',
 	'127.0.0.1',
 	'ks',
