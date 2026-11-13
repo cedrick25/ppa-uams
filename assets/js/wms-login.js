@@ -376,6 +376,32 @@ $.wms.login = (function() {
         return "Set up";
     };
 
+    var pauseModalFocus = function() {
+        $(document).off("focusin.bs.modal");
+    };
+
+    var resumeModalFocus = function() {
+        var modal = $("#sfModal").data("bs.modal");
+        if (modal && modal.enforceFocus) {
+            modal.enforceFocus();
+        }
+    };
+
+    var showWebAuthnError = function(error) {
+        stopFacePreview();
+        hideSfPanels();
+        $("#divSfFingerprint").removeClass("hidden");
+        openSecondFactorModal();
+        $("#fpHint").addClass("hidden");
+        var cancelled = error && (error.name === "NotAllowedError" || error.name === "AbortError");
+        var alreadySaved = error && error.name === "InvalidStateError";
+        showSfAlert(alreadySaved
+            ? "Windows Hello already has a fingerprint for this site. Remove the old UAMS passkey in Windows Settings, then set it up again."
+            : (cancelled
+                ? "Fingerprint was cancelled. Try again, or use PIN or SMS OTP."
+                : "The built-in fingerprint could not be used. Try again, or use PIN or SMS OTP."));
+    };
+
     var runWebAuthn = function(method, deviceLabel) {
         if (!pendingLogin) {
             return;
@@ -429,6 +455,11 @@ $.wms.login = (function() {
     var runWebAuthnCeremony = function(method, deviceLabel, options, enrolled) {
         var token = pendingLogin.payload.SECOND_FACTOR_TOKEN;
             var request;
+            pauseModalFocus();
+            try {
+                window.focus();
+            } catch (ignoreFocus) {}
+            try {
             if (!enrolled) {
                 request = navigator.credentials.create({
                     publicKey: {
@@ -466,6 +497,11 @@ $.wms.login = (function() {
                     }
                 });
             }
+            } catch (error) {
+                resumeModalFocus();
+                showWebAuthnError(error);
+                return;
+            }
 
             request.then(function(credential) {
                 var body = {
@@ -486,6 +522,7 @@ $.wms.login = (function() {
                     verifyPath = '/ppa-api-uams/wsv1/api/webauthnLoginVerify';
                 }
                 $.wms.executeExternalPost(verifyPath, JSON.stringify(body)).done(function(verified) {
+                    resumeModalFocus();
                     stopFacePreview();
                     if (verified.status === 'SUCCESS') {
                         $("#divOtpEnter").addClass("hidden");
@@ -494,17 +531,12 @@ $.wms.login = (function() {
                         showFactorHome();
                         showSfAlert((verified.message || 'Verification failed.') + ' You can use SMS OTP instead.');
                     }
+                }).fail(function() {
+                    resumeModalFocus();
                 });
             }).catch(function(error) {
-                stopFacePreview();
-                hideSfPanels();
-                $("#divSfFingerprint").removeClass("hidden");
-                openSecondFactorModal();
-                $("#fpHint").addClass("hidden");
-                var cancelled = error && (error.name === "NotAllowedError" || error.name === "AbortError");
-                showSfAlert(cancelled
-                    ? "Fingerprint was cancelled. Try again, or use PIN or SMS OTP."
-                    : "The built-in fingerprint could not be used. Try again, or use PIN or SMS OTP.");
+                resumeModalFocus();
+                showWebAuthnError(error);
             });
     };
 
@@ -1549,8 +1581,7 @@ $.wms.login = (function() {
             $("#btnFpFutronic").prop("disabled", true);
             var builtinLabel = devices.secure && devices.platform ? "available, " + methodLabel('fingerprint_builtin') : "not available";
             $("#fpHint").text("Built-in uses the fingerprint already saved in Windows Hello (" + builtinLabel + "). Checking the Futronic FS64.");
-            launchFutronicHelper();
-            waitForFutronic(12).always(function() {
+            waitForFutronic(3).always(function() {
                 applyDeviceState();
                 var futronicText = devices.futronic
                     ? "is connected (" + methodLabel("fingerprint_futronic") + ")."
